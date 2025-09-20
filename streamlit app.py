@@ -443,91 +443,13 @@ st.markdown(f"""
 </div>
 
 <div class="theme-indicator">
-    🎨 {getattr(st.session_state, 'theme_mode', 'Dark')} Mode
+    🎨 {getattr(st.session_state, 'theme_mode', 'Light')} Mode
 </div>
 
 <div class="performance-hud">
     ⚡ {getattr(st.session_state, 'performance_stats', {}).get('total_fractals', 0)} fractals generated
 </div>
 """, unsafe_allow_html=True)
-
-# Initialize session state
-if 'fractal_params' not in st.session_state:
-    st.session_state.fractal_params = {
-        'zoom': 1.0,
-        'center_real': -0.7269,
-        'center_imag': 0.1889,
-        'iterations': 100,
-        'width': 600,
-        'height': 450
-    }
-
-if 'audio_params' not in st.session_state:
-    st.session_state.audio_params = {
-        'base_freq': 136.1,
-        'harmony_freq': 432.0,
-        'duration': 10,
-        'sample_rate': 22050
-    }
-
-if 'current_fractal' not in st.session_state:
-    st.session_state.current_fractal = None
-
-if 'current_audio' not in st.session_state:
-    st.session_state.current_audio = None
-
-if 'locked_controls' not in st.session_state:
-    st.session_state.locked_controls = False
-
-if 'auto_mode' not in st.session_state:
-    st.session_state.auto_mode = False
-
-if 'gallery' not in st.session_state:
-    st.session_state.gallery = []
-
-if 'start_time' not in st.session_state:
-    st.session_state.start_time = time.time()
-
-if 'bookmark_history' not in st.session_state:
-    st.session_state.bookmark_history = []
-
-if 'zoom_history' not in st.session_state:
-    st.session_state.zoom_history = []
-
-if 'current_fractal_type' not in st.session_state:
-    st.session_state.current_fractal_type = "mandelbrot"
-
-if 'current_colormap' not in st.session_state:
-    st.session_state.current_colormap = "hot"
-
-if 'current_mantra_idx' not in st.session_state:
-    st.session_state.current_mantra_idx = 0
-
-if 'fractal_history' not in st.session_state:
-    st.session_state.fractal_history = []
-
-if 'advanced_mode' not in st.session_state:
-    st.session_state.advanced_mode = False
-
-if 'fractal_comparison' not in st.session_state:
-    st.session_state.fractal_comparison = {'enabled': False, 'fractal_a': None, 'fractal_b': None}
-
-if 'interactive_mode' not in st.session_state:
-    st.session_state.interactive_mode = False
-
-if 'theme_mode' not in st.session_state:
-    st.session_state.theme_mode = "Dark"
-
-if 'prev_params' not in st.session_state:
-    st.session_state.prev_params = {
-        'zoom': 1.0,
-        'center_real': -0.7269,
-        'center_imag': 0.1889,
-        'iterations': 100,
-        'fractal_type': "mandelbrot",
-        'colormap': "hot",
-        'mantra_idx': 0
-    }
 
 # Sanskrit mantras
 SANSKRIT_MANTRAS = [
@@ -826,16 +748,32 @@ with tab1:
     action_col1, action_col2, action_col3, action_col4, action_col5 = st.columns(5)
     
     with action_col1:
-        if st.button("🎲 Random", help="Generate random fractal"):
+        if st.button("🎲 Random", help="Explore a random point of interest"):
+            # Curated points of interest instead of random coordinates
+            interesting_locations = [
+                {"zoom": 1.0, "center_real": -0.7269, "center_imag": 0.1889, "type": "mandelbrot", "name": "Classic View"},
+                {"zoom": 150.0, "center_real": -0.75, "center_imag": 0.1, "type": "mandelbrot", "name": "Seahorse Valley"},
+                {"zoom": 100.0, "center_real": -1.775, "center_imag": 0.0, "type": "burning_ship", "name": "Burning Ship"},
+                {"zoom": 200.0, "center_real": 0.285, "center_imag": 0.01, "type": "mandelbrot", "name": "Lightning"},
+                {"zoom": 300.0, "center_real": -0.8, "center_imag": 0.156, "type": "mandelbrot", "name": "Dragon Curve"},
+                {"zoom": 1.0, "center_real": 0.0, "center_imag": 0.0, "type": "julia", "name": "Julia Classic"},
+                {"zoom": 2.0, "center_real": 0.0, "center_imag": 0.0, "type": "newton", "name": "Newton Roots"},
+                {"zoom": 80.0, "center_real": 0.25, "center_imag": 0.0, "type": "mandelbrot", "name": "Elephant Valley"},
+                {"zoom": 500.0, "center_real": -0.7453, "center_imag": 0.1127, "type": "mandelbrot", "name": "Spiral Deep"},
+                {"zoom": 1.0, "center_real": 0.5667, "center_imag": 0.0, "type": "phoenix", "name": "Phoenix Rising"}
+            ]
+            
+            location = np.random.choice(interesting_locations)
             st.session_state.fractal_params.update({
-                'zoom': np.random.uniform(1, 100),
-                'center_real': np.random.uniform(-2, 2),
-                'center_imag': np.random.uniform(-2, 2),
-                'iterations': np.random.choice([100, 150, 200])
+                'zoom': location['zoom'],
+                'center_real': location['center_real'],
+                'center_imag': location['center_imag']
             })
+            st.session_state.current_fractal_type = location['type']
+            
             if st.session_state.auto_mode:
                 # Auto-generate the fractal
-                with st.spinner("🎲 Generating random fractal..."):
+                with st.spinner(f"🎲 Exploring {location['name']}..."):
                     fractal = generate_fractal(
                         fractal_type=st.session_state.current_fractal_type,
                         width=st.session_state.fractal_params['width'], 
@@ -849,6 +787,9 @@ with tab1:
                         fractal, st.session_state.current_mantra_idx, st.session_state.current_colormap
                     )
                     st.session_state.current_fractal = fractal_with_overlay
+                    st.success(f"✨ Discovered {location['name']}!")
+            else:
+                st.success(f"📍 Navigated to {location['name']}! Click Generate to explore.")
             st.rerun()
     
     with action_col2:
@@ -885,13 +826,25 @@ with tab1:
                 st.rerun()
     
     with action_col4:
-        if st.button("🏠 Reset", help="Reset to default view"):
+        if st.button("🏠 Reset", help="Reset to safe default view"):
             st.session_state.zoom_history.append(st.session_state.fractal_params.copy())
-            st.session_state.fractal_params.update({
-                'zoom': 1.0, 'center_real': -0.7269, 'center_imag': 0.1889
-            })
+            
+            # Safe default values that guarantee good fractal visibility
+            safe_defaults = {
+                'zoom': 1.0,
+                'center_real': -0.7269,
+                'center_imag': 0.1889,
+                'iterations': 100,
+                'width': 600,
+                'height': 450
+            }
+            st.session_state.fractal_params.update(safe_defaults)
+            st.session_state.current_fractal_type = "mandelbrot"
+            st.session_state.current_colormap = "hot"
+            st.session_state.current_mantra_idx = 0
+            
             if st.session_state.auto_mode:
-                with st.spinner("🏠 Resetting to default view..."):
+                with st.spinner("🏠 Resetting to safe defaults..."):
                     fractal = generate_fractal(
                         fractal_type=st.session_state.current_fractal_type,
                         width=st.session_state.fractal_params['width'], 
@@ -905,6 +858,9 @@ with tab1:
                         fractal, st.session_state.current_mantra_idx, st.session_state.current_colormap
                     )
                     st.session_state.current_fractal = fractal_with_overlay
+                    st.success("🏠 Reset to classic Mandelbrot view!")
+            else:
+                st.success("🏠 Reset to safe defaults! Click Generate to see classic view.")
             st.rerun()
     
     with action_col5:
@@ -1229,7 +1185,7 @@ Pixel Scale: {3.0/(params['zoom']*params['width']):.2e} units/pixel
                 'mantra_idx': mantra_idx
             }
             
-            # Update session state
+            # Update session state FIRST
             st.session_state.fractal_params.update({
                 'zoom': zoom, 'center_real': center_real, 'center_imag': center_imag,
                 'iterations': iterations, 'width': width, 'height': height
@@ -1565,8 +1521,8 @@ with tab5:
     col1, col2 = st.columns(2)
     
     with col1:
-        new_theme_mode = st.selectbox("Theme Mode", ["Dark", "Light", "Auto"], 
-                                     index=["Dark", "Light", "Auto"].index(st.session_state.theme_mode))
+        new_theme_mode = st.selectbox("Theme Mode", ["Light", "Dark", "Auto"], 
+                                     index=["Light", "Dark", "Auto"].index(st.session_state.theme_mode))
         
         # Apply theme change immediately
         if new_theme_mode != st.session_state.theme_mode:
@@ -1652,63 +1608,6 @@ with tab5:
             st.success("Settings reset!")
             st.rerun()
 
-with tab6:
-    st.header("Gallery & Settings")
-    
-    # Gallery section
-    if st.session_state.gallery:
-        st.subheader(f"Saved Fractals ({len(st.session_state.gallery)})")
-        
-        for i, item in enumerate(st.session_state.gallery):
-            col1, col2, col3 = st.columns([3, 1, 1])
-            with col1:
-                st.image(item['image'], width=200)
-            with col2:
-                if st.button("Load", key=f"load_{i}"):
-                    st.session_state.fractal_params.update(item['params'])
-                    st.success("Loaded!")
-                    st.rerun()
-            with col3:
-                if st.button("Delete", key=f"del_{i}"):
-                    st.session_state.gallery.pop(i)
-                    st.success("Deleted!")
-                    st.rerun()
-    else:
-        st.info("No saved fractals yet.")
-    
-    # Save current fractal
-    if st.button("💾 Save Current Fractal"):
-        if st.session_state.current_fractal is not None:
-            gallery_item = {
-                'timestamp': time.time(),
-                'params': st.session_state.fractal_params.copy(),
-                'image': st.session_state.current_fractal
-            }
-            st.session_state.gallery.append(gallery_item)
-            st.success("💾 Saved to gallery!")
-        else:
-            st.warning("Generate a fractal first")
-    
-    # Bookmark section
-    if st.session_state.bookmark_history:
-        st.subheader(f"Bookmarked Locations ({len(st.session_state.bookmark_history)})")
-        for i, bookmark in enumerate(st.session_state.bookmark_history):
-            col1, col2, col3 = st.columns([2, 1, 1])
-            with col1:
-                st.write(f"**{bookmark['name']}** - {bookmark['type'].title()}")
-                st.write(f"Real: {bookmark['params']['center_real']:.4f}, Imag: {bookmark['params']['center_imag']:.4f}, Zoom: {bookmark['params']['zoom']:.1f}x")
-            with col2:
-                if st.button("Load", key=f"bookmark_{i}"):
-                    st.session_state.fractal_params.update(bookmark['params'])
-                    st.session_state.current_fractal_type = bookmark['type']
-                    st.success("Bookmark loaded!")
-                    st.rerun()
-            with col3:
-                if st.button("Delete", key=f"bookmark_del_{i}"):
-                    st.session_state.bookmark_history.pop(i)
-                    st.success("Bookmark deleted!")
-                    st.rerun()
-    
 with tab6:
     st.header("Export & Download")
     
@@ -1825,7 +1724,7 @@ with tab6:
         else:
             st.info("Generate audio first")
     
-    # Bulk export section
+    # Batch export section
     st.subheader("📦 Batch Export")
     
     if st.session_state.gallery:
@@ -1898,3 +1797,4 @@ with tab6:
 st.markdown("---")
 st.markdown("**💙 Aoin's Fractal Studio** - Mathematical visualization and audio synthesis")
 st.markdown("Built with Streamlit • Mobile optimized interface • Dual input controls")
+st.markdown("*Ready for deployment as part of a larger application suite*")
