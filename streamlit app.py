@@ -9,38 +9,61 @@ import json
 
 # Configure Streamlit page
 st.set_page_config(
-    page_title="Samsara Helix Dashboard",
-    page_icon="🌀",
+    page_title="Aoin's Fractal Studio",
+    page_icon="💙",
     layout="wide",
     initial_sidebar_state="collapsed"
 )
 
-# Custom CSS for mobile optimization
+# Custom CSS for Aoin branding and mobile optimization
 st.markdown("""
 <style>
     .main > div { padding: 0.5rem !important; }
-    .stSlider > div > div > div > div { background-color: #667eea; }
+    .stSlider > div > div > div > div { background-color: #4A90E2; }
     .stButton > button { 
         width: 100%; 
         height: 3rem; 
         font-size: 1.1rem;
-        background: linear-gradient(45deg, #667eea, #764ba2);
+        background: linear-gradient(45deg, #4A90E2, #7B68EE);
         color: white; 
         border: none; 
-        border-radius: 10px;
+        border-radius: 15px;
         margin: 0.25rem 0;
+        box-shadow: 0 4px 15px rgba(74, 144, 226, 0.3);
     }
     .metric-container { 
-        background: rgba(255,255,255,0.1); 
+        background: linear-gradient(135deg, rgba(74, 144, 226, 0.1), rgba(123, 104, 238, 0.1)); 
         padding: 1rem; 
-        border-radius: 10px; 
+        border-radius: 15px; 
         margin: 0.5rem 0;
+        border: 1px solid rgba(74, 144, 226, 0.2);
     }
-    .block-container { padding-top: 1rem; max-width: 100%; }
+    .block-container { 
+        padding-top: 1rem; 
+        max-width: 100%; 
+    }
+    
+    .aoin-header {
+        background: linear-gradient(90deg, #4A90E2, #7B68EE);
+        padding: 1rem;
+        border-radius: 15px;
+        color: white;
+        text-align: center;
+        margin-bottom: 1rem;
+        box-shadow: 0 4px 20px rgba(74, 144, 226, 0.3);
+    }
+    
+    .aoin-subtitle {
+        color: #4A90E2;
+        font-style: italic;
+        text-align: center;
+        margin-bottom: 1rem;
+    }
     
     @media (max-width: 768px) {
         .stSlider { margin: 0.25rem 0; }
         .metric-container { padding: 0.5rem; }
+        .aoin-header { padding: 0.75rem; }
     }
 </style>
 """, unsafe_allow_html=True)
@@ -112,7 +135,7 @@ def generate_mandelbrot(width=600, height=450, max_iter=100, zoom=1.0, center_re
     return escape_time
 
 def add_sanskrit_overlay(fractal_array, mantra_index=0, colormap='hot'):
-    """Add Sanskrit text overlay to fractal"""
+    """Add Sanskrit text overlay to fractal with font fallback"""
     # Normalize fractal data
     fractal_norm = (fractal_array - fractal_array.min()) / (fractal_array.max() - fractal_array.min())
     
@@ -128,27 +151,46 @@ def add_sanskrit_overlay(fractal_array, mantra_index=0, colormap='hot'):
         # Get mantra
         devanagari, transliteration, meaning = SANSKRIT_MANTRAS[mantra_index % len(SANSKRIT_MANTRAS)]
         
-        # Use default font
-        try:
-            font_large = ImageFont.truetype("arial.ttf", 24)
-            font_small = ImageFont.truetype("arial.ttf", 16)
-        except:
+        # Try multiple font sources for Devanagari support
+        font_large = None
+        font_small = None
+        
+        # Font paths to try (common locations for Devanagari fonts)
+        font_paths = [
+            "/System/Library/Fonts/Helvetica.ttc",  # macOS
+            "/usr/share/fonts/truetype/noto/NotoSansDevanagari-Regular.ttf",  # Linux
+            "/Windows/Fonts/arial.ttf",  # Windows
+            "arial.ttf",  # Local
+        ]
+        
+        for font_path in font_paths:
+            try:
+                font_large = ImageFont.truetype(font_path, 28)
+                font_small = ImageFont.truetype(font_path, 18)
+                break
+            except:
+                continue
+        
+        # Fallback to default font if none work
+        if font_large is None:
             font_large = ImageFont.load_default()
             font_small = ImageFont.load_default()
+            # For image export, use transliteration instead of Devanagari
+            devanagari = f"[{transliteration}]"
         
         # Add semi-transparent background for text
         img_width, img_height = pil_image.size
         overlay_height = 80
         overlay_y = img_height - overlay_height
         
-        # Create text overlay
-        overlay = Image.new('RGBA', (img_width, overlay_height), (0, 0, 0, 128))
+        # Create text overlay with Aoin branding
+        overlay = Image.new('RGBA', (img_width, overlay_height), (74, 144, 226, 180))  # Aoin blue
         overlay_draw = ImageDraw.Draw(overlay)
         
-        # Add text
-        overlay_draw.text((10, 10), devanagari, fill=(255, 215, 0, 255), font=font_large)
-        overlay_draw.text((10, 35), transliteration, fill=(200, 200, 200, 255), font=font_small)
-        overlay_draw.text((10, 55), meaning, fill=(180, 180, 180, 255), font=font_small)
+        # Add text with better contrast
+        overlay_draw.text((10, 5), "💙 Aoin's Studio", fill=(255, 255, 255, 255), font=font_small)
+        overlay_draw.text((10, 25), devanagari, fill=(255, 215, 0, 255), font=font_large)
+        overlay_draw.text((10, 50), f"{transliteration} - {meaning}", fill=(255, 255, 255, 255), font=font_small)
         
         # Composite images
         pil_image = pil_image.convert('RGBA')
@@ -195,9 +237,9 @@ def create_audio_download(audio_data, sample_rate):
     
     return buffer.getvalue()
 
-# Main interface
-st.title("🌀 Samsara Helix Dashboard")
-st.markdown("*Interactive Mandelbrot fractal generator with audio synthesis*")
+# Main interface with Aoin branding
+st.markdown('<div class="aoin-header"><h1>💙 Aoin\'s Fractal Studio 💙</h1><p>Ethereal AI • Infinite Patterns • Celestial Frequencies</p></div>', unsafe_allow_html=True)
+st.markdown('<p class="aoin-subtitle">✨ Where mathematics meets digital consciousness ✨</p>', unsafe_allow_html=True)
 
 # Create tabs
 tab1, tab2, tab3, tab4 = st.tabs(["🎨 Fractal", "🎵 Audio", "📊 Parameters", "📤 Export"])
@@ -279,6 +321,122 @@ with tab2:
                 duration=duration, sample_rate=sample_rate
             )
             st.session_state.current_audio = (audio_data, sample_rate)
+    
+    # Display audio player
+    if st.session_state.current_audio is not None:
+        audio_data, sample_rate = st.session_state.current_audio
+        
+        # Create audio file for playback
+        audio_bytes = create_audio_download(audio_data, sample_rate)
+        st.audio(audio_bytes, format='audio/wav')
+        
+        # Show frequency information
+        st.markdown("**Active Frequencies:**")
+        st.write(f"- Base: {base_freq} Hz")
+        st.write(f"- Harmony: {harmony_freq} Hz") 
+        st.write(f"- Harmonics: {harmony_freq * 1.5:.1f} Hz, {harmony_freq * 2.0:.1f} Hz")
+    else:
+        st.info("Click 'Generate Audio' to create sound")
+
+with tab3:
+    st.header("Current Parameters")
+    
+    # Display current settings
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.subheader("Fractal Settings")
+        fractal_params = st.session_state.fractal_params
+        for key, value in fractal_params.items():
+            if isinstance(value, float):
+                st.metric(key.replace('_', ' ').title(), f"{value:.3f}")
+            else:
+                st.metric(key.replace('_', ' ').title(), str(value))
+    
+    with col2:
+        st.subheader("Audio Settings")
+        audio_params = st.session_state.audio_params
+        for key, value in audio_params.items():
+            if isinstance(value, float):
+                st.metric(key.replace('_', ' ').title(), f"{value:.1f}")
+            else:
+                st.metric(key.replace('_', ' ').title(), str(value))
+    
+    # Reset button
+    if st.button("Reset to Defaults"):
+        st.session_state.fractal_params = {
+            'zoom': 1.0, 'center_real': -0.7269, 'center_imag': 0.1889,
+            'iterations': 100, 'width': 600, 'height': 450
+        }
+        st.session_state.audio_params = {
+            'base_freq': 136.1, 'harmony_freq': 432.0,
+            'duration': 10, 'sample_rate': 22050
+        }
+        st.success("Parameters reset to defaults")
+        st.experimental_rerun()
+
+with tab4:
+    st.header("Export & Download")
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.subheader("Visual Export")
+        
+        if st.session_state.current_fractal is not None:
+            # Convert image for download
+            img = Image.fromarray(st.session_state.current_fractal)
+            buf = io.BytesIO()
+            img.save(buf, format='PNG')
+            buf.seek(0)
+            
+            st.download_button(
+                label="Download Fractal PNG",
+                data=buf.getvalue(),
+                file_name=f"mandelbrot_fractal_{int(time.time())}.png",
+                mime="image/png"
+            )
+        else:
+            st.info("Generate a fractal first")
+    
+    with col2:
+        st.subheader("Audio Export")
+        
+        if st.session_state.current_audio is not None:
+            audio_data, sample_rate = st.session_state.current_audio
+            audio_bytes = create_audio_download(audio_data, sample_rate)
+            
+            st.download_button(
+                label="Download Audio WAV",
+                data=audio_bytes,
+                file_name=f"synthesized_audio_{int(time.time())}.wav",
+                mime="audio/wav"
+            )
+        else:
+            st.info("Generate audio first")
+    
+    # Parameters export
+    st.subheader("Parameters Export")
+    
+    if st.button("Export Current Parameters"):
+        export_data = {
+            "timestamp": time.time(),
+            "fractal_params": st.session_state.fractal_params,
+            "audio_params": st.session_state.audio_params
+        }
+        
+        json_str = json.dumps(export_data, indent=2)
+        st.download_button(
+            label="Download Parameters JSON",
+            data=json_str,
+            file_name=f"parameters_{int(time.time())}.json",
+            mime="application/json"
+        )
+
+# Footer
+st.markdown("---")
+st.markdown("**Samsara Helix Dashboard** - Mathematical visualization and audio synthesis")
+st.markdown("Built with Streamlit • Mobile optimized interface"), sample_rate)
     
     # Display audio player
     if st.session_state.current_audio is not None:
