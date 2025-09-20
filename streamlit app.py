@@ -83,7 +83,7 @@ if 'interactive_mode' not in st.session_state:
     st.session_state.interactive_mode = False
 
 if 'theme_mode' not in st.session_state:
-    st.session_state.theme_mode = "Dark"
+    st.session_state.theme_mode = "Light"
 
 if 'prev_params' not in st.session_state:
     st.session_state.prev_params = {
@@ -98,75 +98,213 @@ if 'prev_params' not in st.session_state:
 
 # NOW generate CSS - using safe default approach
 def get_theme_css():
-    """Generate theme-specific CSS safely"""
-    theme_mode = getattr(st.session_state, 'theme_mode', 'Dark')
+    """Generate theme-specific CSS safely with improved readability"""
+    theme_mode = getattr(st.session_state, 'theme_mode', 'Light')
     
     if theme_mode == "Dark":
         return """
         .stApp {
-            background: linear-gradient(135deg, #0e1117 0%, #1a1a2e 50%, #16213e 100%);
-            color: #fafafa;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            color: #ffffff;
         }
         .main .block-container {
-            background: rgba(30, 30, 46, 0.1);
+            background: rgba(255, 255, 255, 0.05);
             backdrop-filter: blur(10px);
             border-radius: 20px;
-            border: 1px solid rgba(74, 144, 226, 0.2);
+            border: 1px solid rgba(74, 144, 226, 0.3);
+        }
+        .stMarkdown, .stMarkdown p, .stMarkdown div {
+            color: #ffffff !important;
+        }
+        .stInfo {
+            background-color: rgba(74, 144, 226, 0.2);
+            color: #ffffff;
+            border: 1px solid rgba(74, 144, 226, 0.4);
+        }
+        .stSuccess {
+            background-color: rgba(40, 167, 69, 0.2);
+            color: #ffffff;
+            border: 1px solid rgba(40, 167, 69, 0.4);
+        }
+        .stWarning {
+            background-color: rgba(255, 193, 7, 0.2);
+            color: #ffffff;
+            border: 1px solid rgba(255, 193, 7, 0.4);
         }
         .glass-panel {
-            background: rgba(30, 30, 46, 0.3);
+            background: rgba(255, 255, 255, 0.08);
             backdrop-filter: blur(15px);
             border-radius: 15px;
-            border: 1px solid rgba(74, 144, 226, 0.3);
+            border: 1px solid rgba(74, 144, 226, 0.4);
             padding: 20px;
             margin: 10px 0;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            color: #ffffff;
         }
         .stSelectbox > div > div {
-            background: rgba(38, 39, 48, 0.8);
+            background: rgba(255, 255, 255, 0.1) !important;
             backdrop-filter: blur(10px);
-            border: 1px solid rgba(74, 144, 226, 0.4);
-            color: #fafafa;
+            border: 2px solid rgba(74, 144, 226, 0.6) !important;
+            color: #ffffff !important;
+        }
+        .stSelectbox label {
+            color: #ffffff !important;
         }
         .stNumberInput > div > div > input {
-            background: rgba(38, 39, 48, 0.8);
+            background: rgba(255, 255, 255, 0.1) !important;
             backdrop-filter: blur(10px);
-            color: #fafafa;
+            color: #ffffff !important;
+            border: 2px solid rgba(74, 144, 226, 0.6) !important;
+        }
+        .stNumberInput label {
+            color: #ffffff !important;
+        }
+        .stSlider > div > div > div > div {
+            background-color: #4A90E2 !important;
+        }
+        .stSlider label {
+            color: #ffffff !important;
+        }
+        .stExpander {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(15px);
             border: 1px solid rgba(74, 144, 226, 0.4);
+            border-radius: 15px;
+        }
+        .stExpander label {
+            color: #ffffff !important;
+        }
+        .stTabs [data-baseweb="tab-list"] {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        .stTabs [data-baseweb="tab"] {
+            color: #ffffff !important;
+        }
+        .stTabs [data-baseweb="tab"][aria-selected="true"] {
+            color: #4A90E2 !important;
+            background: rgba(74, 144, 226, 0.2);
+        }
+        .stRadio > div {
+            color: #ffffff !important;
+        }
+        .stCheckbox > div {
+            color: #ffffff !important;
+        }
+        .stMetric {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(74, 144, 226, 0.3);
+            border-radius: 10px;
+            padding: 10px;
+        }
+        .stMetric label, .stMetric div {
+            color: #ffffff !important;
         }
         """
-    else:  # Light mode
+    else:  # Light mode - clean and professional
         return """
         .stApp {
             background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 50%, #e9ecef 100%);
-            color: #000000;
+            color: #212529;
         }
         .main .block-container {
-            background: rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.9);
             backdrop-filter: blur(10px);
             border-radius: 20px;
             border: 1px solid rgba(74, 144, 226, 0.2);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+        .stMarkdown, .stMarkdown p, .stMarkdown div {
+            color: #212529 !important;
+        }
+        .stInfo {
+            background-color: rgba(74, 144, 226, 0.1);
+            color: #0d47a1;
+            border: 1px solid rgba(74, 144, 226, 0.3);
+        }
+        .stSuccess {
+            background-color: rgba(40, 167, 69, 0.1);
+            color: #155724;
+            border: 1px solid rgba(40, 167, 69, 0.3);
+        }
+        .stWarning {
+            background-color: rgba(255, 193, 7, 0.1);
+            color: #856404;
+            border: 1px solid rgba(255, 193, 7, 0.3);
         }
         .glass-panel {
-            background: rgba(255, 255, 255, 0.7);
+            background: rgba(255, 255, 255, 0.8);
             backdrop-filter: blur(15px);
             border-radius: 15px;
             border: 1px solid rgba(74, 144, 226, 0.3);
             padding: 20px;
             margin: 10px 0;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            color: #212529;
         }
         .stSelectbox > div > div {
-            background: rgba(248, 249, 250, 0.8);
+            background: rgba(255, 255, 255, 0.9) !important;
             backdrop-filter: blur(10px);
-            border: 1px solid rgba(74, 144, 226, 0.4);
-            color: #000000;
+            border: 2px solid rgba(74, 144, 226, 0.4) !important;
+            color: #212529 !important;
+        }
+        .stSelectbox label {
+            color: #212529 !important;
+            font-weight: 500;
         }
         .stNumberInput > div > div > input {
-            background: rgba(248, 249, 250, 0.8);
+            background: rgba(255, 255, 255, 0.9) !important;
             backdrop-filter: blur(10px);
-            color: #000000;
-            border: 1px solid rgba(74, 144, 226, 0.4);
+            color: #212529 !important;
+            border: 2px solid rgba(74, 144, 226, 0.4) !important;
+        }
+        .stNumberInput label {
+            color: #212529 !important;
+            font-weight: 500;
+        }
+        .stSlider > div > div > div > div {
+            background-color: #4A90E2 !important;
+        }
+        .stSlider label {
+            color: #212529 !important;
+            font-weight: 500;
+        }
+        .stExpander {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(74, 144, 226, 0.3);
+            border-radius: 15px;
+        }
+        .stExpander label {
+            color: #212529 !important;
+            font-weight: 600;
+        }
+        .stTabs [data-baseweb="tab-list"] {
+            background: rgba(255, 255, 255, 0.8);
+            border-bottom: 2px solid rgba(74, 144, 226, 0.2);
+        }
+        .stTabs [data-baseweb="tab"] {
+            color: #495057 !important;
+            font-weight: 500;
+        }
+        .stTabs [data-baseweb="tab"][aria-selected="true"] {
+            color: #4A90E2 !important;
+            background: rgba(74, 144, 226, 0.1);
+            font-weight: 600;
+        }
+        .stRadio > div {
+            color: #212529 !important;
+        }
+        .stCheckbox > div {
+            color: #212529 !important;
+        }
+        .stMetric {
+            background: rgba(255, 255, 255, 0.7);
+            border: 1px solid rgba(74, 144, 226, 0.2);
+            border-radius: 10px;
+            padding: 10px;
+        }
+        .stMetric label, .stMetric div {
+            color: #212529 !important;
         }
         """
 
