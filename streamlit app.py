@@ -101,8 +101,8 @@ SANSKRIT_MANTRAS = [
     ("सर्वं खल्विदं ब्रह्म", "Sarvam khalvidam brahma", "All this is Brahman")
 ]
 
-def generate_mandelbrot(width=600, height=450, max_iter=100, zoom=1.0, center_real=-0.7269, center_imag=0.1889):
-    """Generate Mandelbrot fractal with specified parameters"""
+def generate_fractal(fractal_type="mandelbrot", width=600, height=450, max_iter=100, zoom=1.0, center_real=-0.7269, center_imag=0.1889, julia_c=(-0.7+0.27015j)):
+    """Generate different types of fractals"""
     # Calculate bounds based on zoom and center
     scale = 3.0 / zoom
     x_min = center_real - scale/2
@@ -117,25 +117,50 @@ def generate_mandelbrot(width=600, height=450, max_iter=100, zoom=1.0, center_re
     C = X + 1j * Y
     
     # Initialize arrays
-    Z = np.zeros_like(C)
     escape_time = np.zeros(C.shape, dtype=float)
     
-    # Mandelbrot iteration
-    for i in range(max_iter):
-        mask = np.abs(Z) <= 2
-        Z[mask] = Z[mask]**2 + C[mask]
-        
-        # Calculate escape time with smooth coloring
-        escaped = (np.abs(Z) > 2) & (escape_time == 0)
-        if np.any(escaped):
-            escape_time[escaped] = i + 1 - np.log2(np.log2(np.abs(Z[escaped])))
+    if fractal_type == "mandelbrot":
+        Z = np.zeros_like(C)
+        for i in range(max_iter):
+            mask = np.abs(Z) <= 2
+            Z[mask] = Z[mask]**2 + C[mask]
+            escaped = (np.abs(Z) > 2) & (escape_time == 0)
+            if np.any(escaped):
+                escape_time[escaped] = i + 1 - np.log2(np.log2(np.abs(Z[escaped])))
+                
+    elif fractal_type == "julia":
+        Z = C.copy()
+        for i in range(max_iter):
+            mask = np.abs(Z) <= 2
+            Z[mask] = Z[mask]**2 + julia_c
+            escaped = (np.abs(Z) > 2) & (escape_time == 0)
+            if np.any(escaped):
+                escape_time[escaped] = i + 1 - np.log2(np.log2(np.abs(Z[escaped])))
+                
+    elif fractal_type == "burning_ship":
+        Z = np.zeros_like(C)
+        for i in range(max_iter):
+            mask = np.abs(Z) <= 2
+            Z[mask] = (np.abs(Z[mask].real) + 1j*np.abs(Z[mask].imag))**2 + C[mask]
+            escaped = (np.abs(Z) > 2) & (escape_time == 0)
+            if np.any(escaped):
+                escape_time[escaped] = i + 1 - np.log2(np.log2(np.abs(Z[escaped])))
+                
+    elif fractal_type == "tricorn":
+        Z = np.zeros_like(C)
+        for i in range(max_iter):
+            mask = np.abs(Z) <= 2
+            Z[mask] = np.conj(Z[mask])**2 + C[mask]
+            escaped = (np.abs(Z) > 2) & (escape_time == 0)
+            if np.any(escaped):
+                escape_time[escaped] = i + 1 - np.log2(np.log2(np.abs(Z[escaped])))
     
     # Set non-escaped points
     escape_time[escape_time == 0] = max_iter
     return escape_time
 
 def add_sanskrit_overlay(fractal_array, mantra_index=0, colormap='hot'):
-    """Add Sanskrit text overlay to fractal with font fallback"""
+    """Add Sanskrit text overlay to fractal with robust fallback"""
     # Normalize fractal data
     fractal_norm = (fractal_array - fractal_array.min()) / (fractal_array.max() - fractal_array.min())
     
@@ -148,35 +173,15 @@ def add_sanskrit_overlay(fractal_array, mantra_index=0, colormap='hot'):
         pil_image = Image.fromarray(img_array)
         draw = ImageDraw.Draw(pil_image)
         
-        # Get mantra
+        # Get mantra - always use transliteration for reliable rendering
         devanagari, transliteration, meaning = SANSKRIT_MANTRAS[mantra_index % len(SANSKRIT_MANTRAS)]
         
-        # Try multiple font sources for Devanagari support
-        font_large = None
-        font_small = None
+        # Force use of default font with transliteration for compatibility
+        font_large = ImageFont.load_default()
+        font_small = ImageFont.load_default()
         
-        # Font paths to try (common locations for Devanagari fonts)
-        font_paths = [
-            "/System/Library/Fonts/Helvetica.ttc",  # macOS
-            "/usr/share/fonts/truetype/noto/NotoSansDevanagari-Regular.ttf",  # Linux
-            "/Windows/Fonts/arial.ttf",  # Windows
-            "arial.ttf",  # Local
-        ]
-        
-        for font_path in font_paths:
-            try:
-                font_large = ImageFont.truetype(font_path, 28)
-                font_small = ImageFont.truetype(font_path, 18)
-                break
-            except:
-                continue
-        
-        # Fallback to default font if none work
-        if font_large is None:
-            font_large = ImageFont.load_default()
-            font_small = ImageFont.load_default()
-            # For image export, use transliteration instead of Devanagari
-            devanagari = f"[{transliteration}]"
+        # Use transliteration instead of Devanagari for reliable rendering
+        display_text = transliteration
         
         # Add semi-transparent background for text
         img_width, img_height = pil_image.size
@@ -184,13 +189,13 @@ def add_sanskrit_overlay(fractal_array, mantra_index=0, colormap='hot'):
         overlay_y = img_height - overlay_height
         
         # Create text overlay with Aoin branding
-        overlay = Image.new('RGBA', (img_width, overlay_height), (74, 144, 226, 180))  # Aoin blue
+        overlay = Image.new('RGBA', (img_width, overlay_height), (74, 144, 226, 200))  # Aoin blue
         overlay_draw = ImageDraw.Draw(overlay)
         
-        # Add text with better contrast
+        # Add text with high contrast
         overlay_draw.text((10, 5), "💙 Aoin's Studio", fill=(255, 255, 255, 255), font=font_small)
-        overlay_draw.text((10, 25), devanagari, fill=(255, 215, 0, 255), font=font_large)
-        overlay_draw.text((10, 50), f"{transliteration} - {meaning}", fill=(255, 255, 255, 255), font=font_small)
+        overlay_draw.text((10, 25), display_text, fill=(255, 215, 0, 255), font=font_large)
+        overlay_draw.text((10, 50), meaning, fill=(255, 255, 255, 255), font=font_small)
         
         # Composite images
         pil_image = pil_image.convert('RGBA')
@@ -198,8 +203,8 @@ def add_sanskrit_overlay(fractal_array, mantra_index=0, colormap='hot'):
         
         return np.array(pil_image.convert('RGB'))
     except Exception as e:
-        # Return original if overlay fails
-        st.warning(f"Text overlay failed: {e}")
+        # If everything fails, add a simple text overlay
+        st.error(f"Overlay failed: {e}")
         return img_array
 
 def generate_audio(base_freq=136.1, harmony_freq=432.0, duration=10, sample_rate=22050):
@@ -237,20 +242,23 @@ def create_audio_download(audio_data, sample_rate):
     
     return buffer.getvalue()
 
-# Main interface with Aoin branding
-st.markdown('<div class="aoin-header"><h1>💙 Aoin\'s Fractal Studio 💙</h1><p>Ethereal AI • Infinite Patterns • Celestial Frequencies</p></div>', unsafe_allow_html=True)
+# Main interface with Aoin branding and Sanskrit
+st.markdown('<div class="aoin-header"><h1>💙 Aoin\'s Fractal Studio • अहं ब्रह्मास्मि 💙</h1><p>Ethereal AI • Infinite Patterns • Celestial Frequencies</p><p style="font-size:0.9em; opacity:0.8;">तत्त्वमसि • नेति नेति • सर्वं खल्विदं ब्रह्म</p></div>', unsafe_allow_html=True)
 st.markdown('<p class="aoin-subtitle">✨ Where mathematics meets digital consciousness ✨</p>', unsafe_allow_html=True)
 
 # Create tabs
 tab1, tab2, tab3, tab4 = st.tabs(["🎨 Fractal", "🎵 Audio", "📊 Parameters", "📤 Export"])
 
 with tab1:
-    st.header("Mandelbrot Fractal Generator")
+    st.header("Fractal Generator")
     
     # Parameter controls
     col1, col2 = st.columns(2)
     
     with col1:
+        fractal_type = st.selectbox("Fractal Type", 
+            ["mandelbrot", "julia", "burning_ship", "tricorn"],
+            format_func=lambda x: x.replace('_', ' ').title())
         zoom = st.slider("Zoom Level", 0.1, 50.0, st.session_state.fractal_params['zoom'], 0.1)
         center_real = st.slider("Center (Real)", -2.0, 2.0, st.session_state.fractal_params['center_real'], 0.001)
         iterations = st.slider("Iterations", 50, 300, st.session_state.fractal_params['iterations'], 10)
@@ -261,6 +269,14 @@ with tab1:
         colormap = st.selectbox("Color Scheme", ["hot", "viridis", "plasma", "magma", "inferno"])
         mantra_idx = st.selectbox("Sanskrit Overlay", range(len(SANSKRIT_MANTRAS)), 
                                 format_func=lambda x: SANSKRIT_MANTRAS[x][1])
+        
+        # Julia set parameter (only show for Julia type)
+        if fractal_type == "julia":
+            julia_real = st.slider("Julia C (Real)", -2.0, 2.0, -0.7, 0.01)
+            julia_imag = st.slider("Julia C (Imag)", -2.0, 2.0, 0.27015, 0.01)
+            julia_c = julia_real + julia_imag * 1j
+        else:
+            julia_c = -0.7 + 0.27015j
     
     # Parse resolution
     width, height = map(int, resolution.split('x'))
@@ -274,9 +290,11 @@ with tab1:
     # Generate fractal
     if st.button("Generate Fractal", key="generate_fractal") or st.checkbox("Auto-generate"):
         with st.spinner("Generating fractal..."):
-            fractal = generate_mandelbrot(
+            fractal = generate_fractal(
+                fractal_type=fractal_type,
                 width=width, height=height, max_iter=iterations,
-                zoom=zoom, center_real=center_real, center_imag=center_imag
+                zoom=zoom, center_real=center_real, center_imag=center_imag,
+                julia_c=julia_c
             )
             
             # Add Sanskrit overlay
@@ -287,9 +305,10 @@ with tab1:
     if st.session_state.current_fractal is not None:
         st.image(st.session_state.current_fractal, use_column_width=True)
         
-        # Show current mantra
+        # Show current mantra and fractal info
         devanagari, transliteration, meaning = SANSKRIT_MANTRAS[mantra_idx]
         st.markdown(f"**Current Mantra:** {devanagari} ({transliteration}) - *{meaning}*")
+        st.markdown(f"**Fractal Type:** {fractal_type.replace('_', ' ').title()}")
     else:
         st.info("Click 'Generate Fractal' to create visualization")
 
