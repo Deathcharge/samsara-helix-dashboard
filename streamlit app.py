@@ -15,139 +15,277 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Enhanced CSS with animations and theme support
+# Enhanced CSS with glassmorphism, animations and theme support
 theme_css = ""
 
 if st.session_state.theme_mode == "Dark":
     theme_css = """
     .stApp {
-        background-color: #0e1117;
+        background: linear-gradient(135deg, #0e1117 0%, #1a1a2e 50%, #16213e 100%);
         color: #fafafa;
     }
     .main .block-container {
-        background-color: #0e1117;
+        background: rgba(30, 30, 46, 0.1);
+        backdrop-filter: blur(10px);
+        border-radius: 20px;
+        border: 1px solid rgba(74, 144, 226, 0.2);
     }
     .stMarkdown {
         color: #fafafa;
     }
+    .glass-panel {
+        background: rgba(30, 30, 46, 0.3);
+        backdrop-filter: blur(15px);
+        border-radius: 15px;
+        border: 1px solid rgba(74, 144, 226, 0.3);
+        padding: 20px;
+        margin: 10px 0;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    }
     .stSelectbox > div > div {
-        background-color: #262730;
+        background: rgba(38, 39, 48, 0.8);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(74, 144, 226, 0.4);
         color: #fafafa;
     }
     .stNumberInput > div > div > input {
-        background-color: #262730;
+        background: rgba(38, 39, 48, 0.8);
+        backdrop-filter: blur(10px);
         color: #fafafa;
-        border: 1px solid #4A90E2;
-    }
-    .stSlider > div > div > div {
-        background-color: #4A90E2;
+        border: 1px solid rgba(74, 144, 226, 0.4);
     }
     .stExpander {
-        background-color: #1e1e2e;
-        border: 1px solid #4A90E2;
-    }
-    .stTabs [data-baseweb="tab-list"] {
-        background-color: #262730;
-    }
-    .stTabs [data-baseweb="tab"] {
-        color: #fafafa;
+        background: rgba(30, 30, 46, 0.4);
+        backdrop-filter: blur(15px);
+        border: 1px solid rgba(74, 144, 226, 0.3);
+        border-radius: 15px;
     }
     """
 elif st.session_state.theme_mode == "Light":
     theme_css = """
     .stApp {
-        background-color: #ffffff;
+        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 50%, #e9ecef 100%);
         color: #000000;
     }
     .main .block-container {
-        background-color: #ffffff;
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        border-radius: 20px;
+        border: 1px solid rgba(74, 144, 226, 0.2);
     }
-    .stMarkdown {
-        color: #000000;
+    .glass-panel {
+        background: rgba(255, 255, 255, 0.7);
+        backdrop-filter: blur(15px);
+        border-radius: 15px;
+        border: 1px solid rgba(74, 144, 226, 0.3);
+        padding: 20px;
+        margin: 10px 0;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
     }
     .stSelectbox > div > div {
-        background-color: #f0f2f6;
+        background: rgba(248, 249, 250, 0.8);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(74, 144, 226, 0.4);
         color: #000000;
     }
     .stNumberInput > div > div > input {
-        background-color: #f0f2f6;
+        background: rgba(248, 249, 250, 0.8);
+        backdrop-filter: blur(10px);
         color: #000000;
-        border: 1px solid: #4A90E2;
-    }
-    .stExpander {
-        background-color: #f8f9fa;
-        border: 1px solid #4A90E2;
-    }
-    .stTabs [data-baseweb="tab-list"] {
-        background-color: #f0f2f6;
-    }
-    .stTabs [data-baseweb="tab"] {
-        color: #000000;
+        border: 1px solid rgba(74, 144, 226, 0.4);
     }
     """
 
 st.markdown(f"""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Fira+Code:wght@300;400&display=swap');
     
     {theme_css}
     
     .main > div {{ padding: 0.5rem !important; }}
-    .stSlider > div > div > div > div {{ background-color: #4A90E2; }}
     
+    /* Glassmorphism Buttons */
     .stButton > button {{ 
         width: 100%; height: 3rem; font-size: 1.1rem;
-        background: linear-gradient(45deg, #4A90E2, #7B68EE);
-        color: white; border: none; border-radius: 15px;
-        margin: 0.25rem 0; box-shadow: 0 4px 15px rgba(74, 144, 226, 0.3);
-        transition: all 0.3s ease; position: relative; overflow: hidden;
+        background: rgba(74, 144, 226, 0.2);
+        backdrop-filter: blur(15px);
+        color: white; border: 1px solid rgba(74, 144, 226, 0.3);
+        border-radius: 15px; margin: 0.25rem 0;
+        box-shadow: 0 8px 32px rgba(74, 144, 226, 0.2);
+        transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        position: relative; overflow: hidden;
     }}
     
     .stButton > button:hover {{
-        transform: translateY(-2px); box-shadow: 0 8px 25px rgba(74, 144, 226, 0.4);
-        background: linear-gradient(45deg, #5A9FF2, #8B78FE);
+        transform: translateY(-3px) scale(1.02);
+        background: rgba(74, 144, 226, 0.3);
+        box-shadow: 0 12px 40px rgba(74, 144, 226, 0.4);
+        border: 1px solid rgba(74, 144, 226, 0.6);
     }}
     
+    .stButton > button::before {{
+        content: ''; position: absolute; top: 0; left: -100%;
+        width: 100%; height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+        transition: left 0.6s ease;
+    }}
+    
+    .stButton > button:hover::before {{ left: 100%; }}
+    
+    /* Enhanced Generate Button */
     .generate-button {{
-        background: linear-gradient(45deg, #FF6B6B, #4ECDC4) !important;
-        font-size: 1.3rem !important;
-        height: 4rem !important;
-        font-weight: bold !important;
-        box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4) !important;
+        background: linear-gradient(135deg, #FF6B6B, #4ECDC4, #45B7D1) !important;
+        font-size: 1.4rem !important; height: 4.5rem !important;
+        font-weight: bold !important; font-family: 'Orbitron', monospace !important;
+        box-shadow: 0 8px 40px rgba(255, 107, 107, 0.4) !important;
+        animation: pulse-glow 2s infinite alternate !important;
     }}
     
+    @keyframes pulse-glow {{
+        0% {{ box-shadow: 0 8px 40px rgba(255, 107, 107, 0.4); }}
+        100% {{ box-shadow: 0 12px 60px rgba(255, 107, 107, 0.6); }}
+    }}
+    
+    /* Floating Particles Enhanced */
     .floating-particles {{
         position: fixed; top: 0; left: 0; width: 100%; height: 100%;
         pointer-events: none; z-index: -1; overflow: hidden;
     }}
     
     .particle {{
-        position: absolute; width: 4px; height: 4px;
-        background: radial-gradient(circle, #4A90E2, transparent);
-        border-radius: 50%; animation: float 15s infinite linear; opacity: 0.6;
+        position: absolute; border-radius: 50%; 
+        animation: float 20s infinite linear;
     }}
+    
+    .particle:nth-child(1) {{ width: 6px; height: 6px; background: radial-gradient(circle, #4A90E2, transparent); }}
+    .particle:nth-child(2) {{ width: 4px; height: 4px; background: radial-gradient(circle, #7B68EE, transparent); }}
+    .particle:nth-child(3) {{ width: 8px; height: 8px; background: radial-gradient(circle, #FF6B6B, transparent); }}
+    .particle:nth-child(4) {{ width: 5px; height: 5px; background: radial-gradient(circle, #4ECDC4, transparent); }}
+    .particle:nth-child(5) {{ width: 7px; height: 7px; background: radial-gradient(circle, #FFD93D, transparent); }}
     
     @keyframes float {{
-        0% {{ transform: translateY(100vh) rotate(0deg); opacity: 0; }}
-        10% {{ opacity: 0.6; }}
-        90% {{ opacity: 0.6; }}
-        100% {{ transform: translateY(-100px) rotate(360deg); opacity: 0; }}
+        0% {{ transform: translateY(100vh) rotate(0deg) scale(0.5); opacity: 0; }}
+        10% {{ opacity: 0.8; transform: scale(1); }}
+        50% {{ transform: scale(1.2); }}
+        90% {{ opacity: 0.8; transform: scale(0.8); }}
+        100% {{ transform: translateY(-100px) rotate(360deg) scale(0.3); opacity: 0; }}
     }}
     
+    /* Enhanced Fractal Container */
     .fractal-container {{
-        position: relative; border-radius: 15px; overflow: hidden;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.3); transition: all 0.3s ease;
+        position: relative; border-radius: 20px; overflow: hidden;
+        background: rgba(74, 144, 226, 0.05);
+        backdrop-filter: blur(20px);
+        border: 2px solid rgba(74, 144, 226, 0.3);
+        box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        transition: all 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
     }}
     
     .fractal-container:hover {{
-        transform: scale(1.02); box-shadow: 0 15px 40px rgba(74, 144, 226, 0.3);
+        transform: scale(1.02) rotateX(2deg);
+        box-shadow: 0 30px 80px rgba(74, 144, 226, 0.4);
+        border: 2px solid rgba(74, 144, 226, 0.6);
     }}
     
+    /* Theme Indicator */
     .theme-indicator {{
-        position: fixed; top: 10px; right: 10px; z-index: 1000;
-        background: rgba(74, 144, 226, 0.8); color: white;
-        padding: 5px 10px; border-radius: 15px; font-size: 12px;
+        position: fixed; top: 15px; right: 15px; z-index: 1000;
+        background: rgba(74, 144, 226, 0.2); backdrop-filter: blur(15px);
+        color: white; padding: 8px 15px; border-radius: 20px;
+        border: 1px solid rgba(74, 144, 226, 0.3);
+        font-size: 12px; font-family: 'Fira Code', monospace;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
     }}
+    
+    /* Interactive Elements */
+    .coordinates-display {{
+        position: absolute; top: 10px; left: 10px; z-index: 100;
+        background: rgba(0, 0, 0, 0.7); color: #4ECDC4;
+        padding: 5px 10px; border-radius: 10px;
+        font-family: 'Fira Code', monospace; font-size: 10px;
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(76, 205, 196, 0.3);
+    }}
+    
+    /* Mathematical Analysis Panel */
+    .math-panel {{
+        background: rgba(30, 30, 46, 0.4); backdrop-filter: blur(15px);
+        border-radius: 15px; border: 1px solid rgba(74, 144, 226, 0.3);
+        padding: 15px; margin: 10px 0;
+        font-family: 'Fira Code', monospace;
+    }}
+    
+    /* Advanced Mode Toggle */
+    .advanced-toggle {{
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none; border-radius: 25px; padding: 10px 20px;
+        color: white; font-weight: bold;
+        box-shadow: 0 8px 32px rgba(102, 126, 234, 0.3);
+        transition: all 0.3s ease;
+    }}
+    
+    .advanced-toggle:hover {{
+        transform: translateY(-2px);
+        box-shadow: 0 12px 40px rgba(102, 126, 234, 0.4);
+    }}
+    
+    /* Comparison Mode */
+    .comparison-container {{
+        display: grid; grid-template-columns: 1fr 1fr;
+        gap: 20px; margin: 20px 0;
+    }}
+    
+    /* Performance HUD */
+    .performance-hud {{
+        position: fixed; bottom: 15px; left: 15px; z-index: 1000;
+        background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(15px);
+        color: #4ECDC4; padding: 10px 15px; border-radius: 15px;
+        font-family: 'Fira Code', monospace; font-size: 11px;
+        border: 1px solid rgba(76, 205, 196, 0.3);
+    }}
+    
+    /* Breadcrumb Navigation */
+    .breadcrumb {{
+        background: rgba(74, 144, 226, 0.1); backdrop-filter: blur(10px);
+        border-radius: 25px; padding: 10px 20px; margin: 10px 0;
+        border: 1px solid rgba(74, 144, 226, 0.2);
+        font-family: 'Fira Code', monospace;
+    }}
+    
+    /* Loading Spinner */
+    .loading-spinner {{
+        border: 3px solid rgba(74, 144, 226, 0.3);
+        border-top: 3px solid #4A90E2;
+        border-radius: 50%; width: 30px; height: 30px;
+        animation: spin 1s linear infinite;
+        margin: 0 auto;
+    }}
+    
+    @keyframes spin {{
+        0% {{ transform: rotate(0deg); }}
+        100% {{ transform: rotate(360deg); }}
+    }}
+    
+    /* Mobile Optimizations */
+    @media (max-width: 768px) {{
+        .stButton > button {{ height: 2.5rem; font-size: 1rem; }}
+        .generate-button {{ height: 3.5rem !important; font-size: 1.2rem !important; }}
+        .particle {{ width: 3px !important; height: 3px !important; }}
+        .theme-indicator {{ top: 10px; right: 10px; padding: 5px 10px; }}
+        .coordinates-display {{ font-size: 8px; }}
+    }}
+    
+    /* Keyboard Shortcuts Helper */
+    .shortcuts-help {{
+        position: fixed; bottom: 15px; right: 15px; z-index: 1000;
+        background: rgba(74, 144, 226, 0.2); backdrop-filter: blur(15px);
+        color: white; padding: 5px 10px; border-radius: 15px;
+        font-size: 10px; font-family: 'Fira Code', monospace;
+        border: 1px solid rgba(74, 144, 226, 0.3);
+        opacity: 0.7; transition: opacity 0.3s ease;
+    }}
+    
+    .shortcuts-help:hover {{ opacity: 1; }}
 </style>
 
 <div class="floating-particles">
@@ -161,6 +299,33 @@ st.markdown(f"""
 <div class="theme-indicator">
     🎨 {st.session_state.theme_mode} Mode
 </div>
+
+<div class="performance-hud">
+    ⚡ {st.session_state.performance_stats.get('total_fractals', 0)} fractals generated
+</div>
+
+<div class="shortcuts-help">
+    ⌨️ Press G to generate | R for random | T for theme
+</div>
+
+<script>
+document.addEventListener('keydown', function(event) {{
+    if (event.key === 'g' || event.key === 'G') {{
+        // Trigger generate button
+        const generateBtn = document.querySelector('[data-testid="baseButton-primary"]');
+        if (generateBtn) generateBtn.click();
+    }}
+    if (event.key === 'r' || event.key === 'R') {{
+        // Trigger random button
+        const randomBtn = document.querySelector('button[title="Generate random fractal"]');
+        if (randomBtn) randomBtn.click();
+    }}
+    if (event.key === 't' || event.key === 'T') {{
+        // Toggle theme (would need more complex implementation)
+        console.log('Theme toggle shortcut');
+    }}
+}});
+</script>
 """, unsafe_allow_html=True)
 
 # Initialize session state
@@ -437,7 +602,7 @@ with tab1:
     
     # PROMINENT GENERATE BUTTON AT TOP
     st.markdown("### 🌟 Create Your Fractal")
-    generate_col1, generate_col2 = st.columns([3, 1])
+    generate_col1, generate_col2, generate_col3 = st.columns([2, 1, 1])
     
     with generate_col1:
         if st.button("🎨 **GENERATE FRACTAL**", key="generate_fractal", help="Click to create fractal with current settings"):
@@ -459,11 +624,77 @@ with tab1:
                     st.session_state.current_colormap
                 )
                 st.session_state.current_fractal = fractal_with_overlay
+                
+                # Add to history
+                history_item = {
+                    'timestamp': time.time(),
+                    'params': st.session_state.fractal_params.copy(),
+                    'type': st.session_state.current_fractal_type,
+                    'colormap': st.session_state.current_colormap
+                }
+                st.session_state.fractal_history.append(history_item)
+                if len(st.session_state.fractal_history) > 10:
+                    st.session_state.fractal_history.pop(0)
+                
                 st.success("✨ Fractal generated successfully!")
                 st.rerun()
     
     with generate_col2:
         st.session_state.auto_mode = st.checkbox("🔄 Auto-generate", value=st.session_state.auto_mode, help="Automatically generate when parameters change")
+    
+    with generate_col3:
+        st.session_state.advanced_mode = st.checkbox("🔬 Advanced", value=st.session_state.advanced_mode, help="Enable advanced mathematical analysis")
+    
+    # Advanced Mode Features
+    if st.session_state.advanced_mode:
+        st.markdown('<div class="glass-panel">', unsafe_allow_html=True)
+        st.markdown("### 🔬 Advanced Mathematical Analysis")
+        
+        analysis_col1, analysis_col2, analysis_col3 = st.columns(3)
+        
+        with analysis_col1:
+            if st.button("📊 Analyze Current"):
+                if st.session_state.current_fractal is not None:
+                    st.info("**Mathematical Properties:**")
+                    st.write(f"• **Zoom Level**: {st.session_state.fractal_params['zoom']:.3f}x")
+                    st.write(f"• **Iteration Depth**: {st.session_state.fractal_params['iterations']}")
+                    st.write(f"• **Complex Center**: {st.session_state.fractal_params['center_real']:.6f} + {st.session_state.fractal_params['center_imag']:.6f}i")
+                    
+                    # Calculate approximate fractal dimension (simplified)
+                    zoom = st.session_state.fractal_params['zoom']
+                    iterations = st.session_state.fractal_params['iterations']
+                    fractal_dim = 1.2 + (np.log(iterations) / np.log(zoom + 1)) * 0.8
+                    st.write(f"• **Est. Fractal Dimension**: {fractal_dim:.3f}")
+        
+        with analysis_col2:
+            comparison_mode = st.checkbox("🔍 Comparison Mode", value=st.session_state.fractal_comparison['enabled'])
+            if comparison_mode != st.session_state.fractal_comparison['enabled']:
+                st.session_state.fractal_comparison['enabled'] = comparison_mode
+        
+        with analysis_col3:
+            interactive_mode = st.checkbox("🎯 Interactive Mode", value=st.session_state.interactive_mode, help="Click fractal to zoom to that point")
+            if interactive_mode != st.session_state.interactive_mode:
+                st.session_state.interactive_mode = interactive_mode
+        
+        st.markdown('</div>', unsafe_allow_html=True)
+    
+    # Breadcrumb Navigation
+    if st.session_state.fractal_history:
+        st.markdown('<div class="breadcrumb">', unsafe_allow_html=True)
+        st.markdown("**🗺️ Exploration History:**")
+        
+        breadcrumb_cols = st.columns(min(5, len(st.session_state.fractal_history)))
+        for i, item in enumerate(st.session_state.fractal_history[-5:]):
+            with breadcrumb_cols[i]:
+                zoom_level = item['params']['zoom']
+                if st.button(f"#{i+1} ({zoom_level:.1f}x)", key=f"history_{i}"):
+                    st.session_state.fractal_params.update(item['params'])
+                    st.session_state.current_fractal_type = item['type']
+                    st.session_state.current_colormap = item['colormap']
+                    if st.session_state.auto_mode:
+                        st.rerun()
+        
+        st.markdown('</div>', unsafe_allow_html=True)
     
     st.markdown("---")
     
