@@ -15,13 +15,91 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Enhanced CSS with glassmorphism, animations and theme support
+# Initialize session state FIRST
+if 'fractal_params' not in st.session_state:
+    st.session_state.fractal_params = {
+        'zoom': 1.0,
+        'center_real': -0.7269,
+        'center_imag': 0.1889,
+        'iterations': 100,
+        'width': 600,
+        'height': 450
+    }
+
+if 'audio_params' not in st.session_state:
+    st.session_state.audio_params = {
+        'base_freq': 136.1,
+        'harmony_freq': 432.0,
+        'duration': 10,
+        'sample_rate': 22050
+    }
+
+if 'current_fractal' not in st.session_state:
+    st.session_state.current_fractal = None
+
+if 'current_audio' not in st.session_state:
+    st.session_state.current_audio = None
+
+if 'locked_controls' not in st.session_state:
+    st.session_state.locked_controls = False
+
+if 'auto_mode' not in st.session_state:
+    st.session_state.auto_mode = False
+
+if 'gallery' not in st.session_state:
+    st.session_state.gallery = []
+
+if 'start_time' not in st.session_state:
+    st.session_state.start_time = time.time()
+
+if 'bookmark_history' not in st.session_state:
+    st.session_state.bookmark_history = []
+
+if 'zoom_history' not in st.session_state:
+    st.session_state.zoom_history = []
+
+if 'current_fractal_type' not in st.session_state:
+    st.session_state.current_fractal_type = "mandelbrot"
+
+if 'current_colormap' not in st.session_state:
+    st.session_state.current_colormap = "hot"
+
+if 'current_mantra_idx' not in st.session_state:
+    st.session_state.current_mantra_idx = 0
+
+if 'performance_stats' not in st.session_state:
+    st.session_state.performance_stats = {"render_times": [], "total_fractals": 0}
+
+if 'fractal_history' not in st.session_state:
+    st.session_state.fractal_history = []
+
+if 'advanced_mode' not in st.session_state:
+    st.session_state.advanced_mode = False
+
+if 'fractal_comparison' not in st.session_state:
+    st.session_state.fractal_comparison = {'enabled': False, 'fractal_a': None, 'fractal_b': None}
+
+if 'interactive_mode' not in st.session_state:
+    st.session_state.interactive_mode = False
+
+if 'theme_mode' not in st.session_state:
+    st.session_state.theme_mode = "Dark"
+
+if 'prev_params' not in st.session_state:
+    st.session_state.prev_params = {
+        'zoom': 1.0,
+        'center_real': -0.7269,
+        'center_imag': 0.1889,
+        'iterations': 100,
+        'fractal_type': "mandelbrot",
+        'colormap': "hot",
+        'mantra_idx': 0
+    }
+
+# NOW generate CSS after session state is initialized
 theme_css = ""
 
-# Get theme mode with default fallback
-current_theme = getattr(st.session_state, 'theme_mode', 'Dark')
-
-if current_theme == "Dark":
+if st.session_state.theme_mode == "Dark":
     theme_css = """
     .stApp {
         background: linear-gradient(135deg, #0e1117 0%, #1a1a2e 50%, #16213e 100%);
@@ -64,7 +142,7 @@ if current_theme == "Dark":
         border-radius: 15px;
     }
     """
-elif current_theme == "Light":
+elif st.session_state.theme_mode == "Light":
     theme_css = """
     .stApp {
         background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 50%, #e9ecef 100%);
