@@ -15,11 +15,14 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Custom CSS for Aoin branding and mobile optimization
+# Custom CSS for Aoin branding and mobile optimization with animations
 st.markdown("""
 <style>
+    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
+    
     .main > div { padding: 0.5rem !important; }
     .stSlider > div > div > div > div { background-color: #4A90E2; }
+    
     .stButton > button { 
         width: 100%; 
         height: 3rem; 
@@ -30,17 +33,50 @@ st.markdown("""
         border-radius: 15px;
         margin: 0.25rem 0;
         box-shadow: 0 4px 15px rgba(74, 144, 226, 0.3);
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
     }
+    
+    .stButton > button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(74, 144, 226, 0.4);
+        background: linear-gradient(45deg, #5A9FF2, #8B78FE);
+    }
+    
+    .stButton > button::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+        transition: left 0.5s;
+    }
+    
+    .stButton > button:hover::before {
+        left: 100%;
+    }
+    
     .metric-container { 
         background: linear-gradient(135deg, rgba(74, 144, 226, 0.1), rgba(123, 104, 238, 0.1)); 
         padding: 1rem; 
         border-radius: 15px; 
         margin: 0.5rem 0;
         border: 1px solid rgba(74, 144, 226, 0.2);
+        transition: all 0.3s ease;
     }
+    
+    .metric-container:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 30px rgba(74, 144, 226, 0.2);
+    }
+    
     .block-container { 
         padding-top: 1rem; 
         max-width: 100%; 
+        position: relative;
     }
     
     .aoin-header {
@@ -51,6 +87,25 @@ st.markdown("""
         text-align: center;
         margin-bottom: 1rem;
         box-shadow: 0 4px 20px rgba(74, 144, 226, 0.3);
+        position: relative;
+        overflow: hidden;
+        font-family: 'Orbitron', monospace;
+    }
+    
+    .aoin-header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.1) 50%, transparent 70%);
+        animation: shimmer 3s infinite;
+    }
+    
+    @keyframes shimmer {
+        0% { transform: translateX(-100%); }
+        100% { transform: translateX(100%); }
     }
     
     .aoin-subtitle {
@@ -58,6 +113,91 @@ st.markdown("""
         font-style: italic;
         text-align: center;
         margin-bottom: 1rem;
+        animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+        0%, 100% { opacity: 0.8; }
+        50% { opacity: 1; }
+    }
+    
+    .floating-particles {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: -1;
+        overflow: hidden;
+    }
+    
+    .particle {
+        position: absolute;
+        width: 4px;
+        height: 4px;
+        background: radial-gradient(circle, #4A90E2, transparent);
+        border-radius: 50%;
+        animation: float 15s infinite linear;
+        opacity: 0.6;
+    }
+    
+    @keyframes float {
+        0% {
+            transform: translateY(100vh) rotate(0deg);
+            opacity: 0;
+        }
+        10% {
+            opacity: 0.6;
+        }
+        90% {
+            opacity: 0.6;
+        }
+        100% {
+            transform: translateY(-100px) rotate(360deg);
+            opacity: 0;
+        }
+    }
+    
+    .fractal-container {
+        position: relative;
+        border-radius: 15px;
+        overflow: hidden;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        transition: all 0.3s ease;
+    }
+    
+    .fractal-container:hover {
+        transform: scale(1.02);
+        box-shadow: 0 15px 40px rgba(74, 144, 226, 0.3);
+    }
+    
+    .math-formula {
+        font-family: 'Courier New', monospace;
+        background: linear-gradient(45deg, #1a1a2e, #16213e);
+        color: #4A90E2;
+        padding: 1rem;
+        border-radius: 10px;
+        border-left: 4px solid #4A90E2;
+        margin: 1rem 0;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .math-formula::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 2px;
+        background: linear-gradient(90deg, #4A90E2, #7B68EE, #4A90E2);
+        animation: scan 2s infinite;
+    }
+    
+    @keyframes scan {
+        0% { transform: translateX(-100%); }
+        100% { transform: translateX(100%); }
     }
     
     .preset-button {
@@ -70,32 +210,111 @@ st.markdown("""
         cursor: pointer;
         border: none;
         font-size: 0.9rem;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .preset-button:hover {
+        transform: translateY(-3px) scale(1.05);
+        box-shadow: 0 8px 20px rgba(74, 144, 226, 0.4);
     }
     
     .lock-indicator {
-        background: #ff6b6b;
+        background: linear-gradient(45deg, #ff6b6b, #ff8e8e);
         color: white;
         padding: 0.25rem 0.5rem;
         border-radius: 5px;
         font-size: 0.8rem;
         margin: 0.25rem;
+        animation: glow-red 2s infinite;
     }
     
     .unlock-indicator {
-        background: #51cf66;
+        background: linear-gradient(45deg, #51cf66, #69db69);
         color: white;
         padding: 0.25rem 0.5rem;
         border-radius: 5px;
         font-size: 0.8rem;
         margin: 0.25rem;
+        animation: glow-green 2s infinite;
+    }
+    
+    @keyframes glow-red {
+        0%, 100% { box-shadow: 0 0 5px rgba(255, 107, 107, 0.5); }
+        50% { box-shadow: 0 0 15px rgba(255, 107, 107, 0.8); }
+    }
+    
+    @keyframes glow-green {
+        0%, 100% { box-shadow: 0 0 5px rgba(81, 207, 102, 0.5); }
+        50% { box-shadow: 0 0 15px rgba(81, 207, 102, 0.8); }
+    }
+    
+    .stSelectbox > div > div > div {
+        background: linear-gradient(135deg, #2a2a4a, #3a3a6a);
+        border: 1px solid #4A90E2;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+    }
+    
+    .stSelectbox > div > div > div:hover {
+        border-color: #7B68EE;
+        box-shadow: 0 0 10px rgba(74, 144, 226, 0.3);
+    }
+    
+    .loading-wave {
+        display: inline-block;
+        animation: wave 1s infinite;
+    }
+    
+    @keyframes wave {
+        0%, 60%, 100% { transform: initial; }
+        30% { transform: translateY(-10px); }
+    }
+    
+    .audio-visualizer {
+        width: 100%;
+        height: 60px;
+        background: linear-gradient(90deg, #1a1a2e, #16213e);
+        border-radius: 10px;
+        position: relative;
+        overflow: hidden;
+        margin: 1rem 0;
+    }
+    
+    .audio-bar {
+        position: absolute;
+        bottom: 0;
+        width: 4px;
+        background: linear-gradient(0deg, #4A90E2, #7B68EE);
+        border-radius: 2px;
+        animation: audio-pulse 0.5s infinite ease-in-out alternate;
+    }
+    
+    @keyframes audio-pulse {
+        0% { height: 10px; }
+        100% { height: 50px; }
     }
     
     @media (max-width: 768px) {
         .stSlider { margin: 0.25rem 0; }
         .metric-container { padding: 0.5rem; }
         .aoin-header { padding: 0.75rem; }
+        .particle { width: 2px; height: 2px; }
     }
 </style>
+
+<div class="floating-particles">
+    <div class="particle" style="left: 10%; animation-delay: 0s;"></div>
+    <div class="particle" style="left: 20%; animation-delay: 2s;"></div>
+    <div class="particle" style="left: 30%; animation-delay: 4s;"></div>
+    <div class="particle" style="left: 40%; animation-delay: 6s;"></div>
+    <div class="particle" style="left: 50%; animation-delay: 8s;"></div>
+    <div class="particle" style="left: 60%; animation-delay: 10s;"></div>
+    <div class="particle" style="left: 70%; animation-delay: 12s;"></div>
+    <div class="particle" style="left: 80%; animation-delay: 14s;"></div>
+    <div class="particle" style="left: 90%; animation-delay: 16s;"></div>
+</div>
 """, unsafe_allow_html=True)
 
 # Initialize session state
@@ -141,6 +360,18 @@ if 'theme' not in st.session_state:
 if 'tutorial_shown' not in st.session_state:
     st.session_state.tutorial_shown = False
 
+if 'bookmark_history' not in st.session_state:
+    st.session_state.bookmark_history = []
+
+if 'performance_stats' not in st.session_state:
+    st.session_state.performance_stats = {"render_times": [], "total_fractals": 0}
+
+if 'color_palette' not in st.session_state:
+    st.session_state.color_palette = {"primary": "#4A90E2", "secondary": "#7B68EE"}
+
+if 'zoom_history' not in st.session_state:
+    st.session_state.zoom_history = []
+
 # Sanskrit mantras for overlay
 SANSKRIT_MANTRAS = [
     ("अहं ब्रह्मास्मि", "Aham Brahmasmi", "I am Brahman"),
@@ -150,7 +381,9 @@ SANSKRIT_MANTRAS = [
 ]
 
 def generate_fractal(fractal_type="mandelbrot", width=600, height=450, max_iter=100, zoom=1.0, center_real=-0.7269, center_imag=0.1889, julia_c=(-0.7+0.27015j)):
-    """Generate different types of fractals"""
+    """Generate different types of fractals with improved algorithms"""
+    start_time = time.time()
+    
     # Calculate bounds based on zoom and center
     scale = 3.0 / zoom
     x_min = center_real - scale/2
@@ -202,9 +435,43 @@ def generate_fractal(fractal_type="mandelbrot", width=600, height=450, max_iter=
             escaped = (np.abs(Z) > 2) & (escape_time == 0)
             if np.any(escaped):
                 escape_time[escaped] = i + 1 - np.log2(np.log2(np.abs(Z[escaped])))
+                
+    elif fractal_type == "newton":
+        # Newton fractal for z^3 - 1 = 0
+        Z = C.copy()
+        roots = [1, -0.5 + 0.866j, -0.5 - 0.866j]
+        for i in range(max_iter):
+            # Newton iteration for z^3 - 1 = 0
+            denom = 3 * Z**2
+            mask = np.abs(denom) > 1e-10
+            Z[mask] = Z[mask] - (Z[mask]**3 - 1) / denom[mask]
+            
+            # Check convergence to roots
+            for j, root in enumerate(roots):
+                converged = np.abs(Z - root) < 0.01
+                escape_time[converged & (escape_time == 0)] = i + j * max_iter / 3
+                
+    elif fractal_type == "phoenix":
+        # Phoenix fractal
+        Z = np.zeros_like(C)
+        Z_prev = np.zeros_like(C)
+        for i in range(max_iter):
+            mask = np.abs(Z) <= 2
+            Z_new = Z[mask]**2 + C[mask] + 0.5 * Z_prev[mask]
+            Z_prev[mask] = Z[mask]
+            Z[mask] = Z_new
+            escaped = (np.abs(Z) > 2) & (escape_time == 0)
+            if np.any(escaped):
+                escape_time[escaped] = i + 1 - np.log2(np.log2(np.abs(Z[escaped])))
     
     # Set non-escaped points
     escape_time[escape_time == 0] = max_iter
+    
+    # Track performance
+    render_time = time.time() - start_time
+    st.session_state.performance_stats["render_times"].append(render_time)
+    st.session_state.performance_stats["total_fractals"] += 1
+    
     return escape_time
 
 def add_sanskrit_overlay(fractal_array, mantra_index=0, colormap='hot'):
@@ -646,14 +913,156 @@ with tab1:
     
     # Display current fractal first
     if st.session_state.current_fractal is not None:
-        # Add click-to-zoom functionality info
-        st.image(st.session_state.current_fractal, use_container_width=True, 
-                caption="💡 Tip: Use the zoom slider and presets to explore different regions")
+        # Mathematical analysis section
+        st.subheader("📊 Mathematical Analysis")
         
-        # Show current info
-        st.info(f"**Type:** {getattr(st.session_state, 'current_fractal_type', 'Mandelbrot').replace('_', ' ').title()} | "
-               f"**Zoom:** {st.session_state.fractal_params['zoom']:.1f}x | "
-               f"**Center:** ({st.session_state.fractal_params['center_real']:.3f}, {st.session_state.fractal_params['center_imag']:.3f})")
+        analysis_col1, analysis_col2, analysis_col3 = st.columns(3)
+        
+        with analysis_col1:
+            # Calculate fractal dimension (box counting method approximation)
+            fractal_data = st.session_state.current_fractal
+            if len(fractal_data.shape) == 3:
+                # Convert to grayscale for analysis
+                gray_fractal = np.mean(fractal_data, axis=2)
+            else:
+                gray_fractal = fractal_data
+            
+            # Simple complexity measure
+            edges = np.sum(np.abs(np.diff(gray_fractal, axis=0))) + np.sum(np.abs(np.diff(gray_fractal, axis=1)))
+            complexity = edges / (gray_fractal.shape[0] * gray_fractal.shape[1])
+            
+            st.metric("Complexity Index", f"{complexity:.2f}")
+        
+        with analysis_col2:
+            # Zoom depth indicator
+            zoom_level = st.session_state.fractal_params['zoom']
+            if zoom_level < 1:
+                depth_desc = "Wide View"
+            elif zoom_level < 10:
+                depth_desc = "Standard"
+            elif zoom_level < 100:
+                depth_desc = "Deep Zoom"
+            else:
+                depth_desc = "Ultra Deep"
+            
+            st.metric("Zoom Depth", depth_desc)
+        
+        with analysis_col3:
+            # Performance metric
+            if st.session_state.performance_stats["render_times"]:
+                avg_render = np.mean(st.session_state.performance_stats["render_times"][-10:])
+                st.metric("Avg Render Time", f"{avg_render:.2f}s")
+            else:
+                st.metric("Avg Render Time", "N/A")
+        
+        # Coordinate history and navigation
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            if st.button("📍 Bookmark Location"):
+                bookmark = {
+                    'name': f"Bookmark {len(st.session_state.bookmark_history) + 1}",
+                    'params': st.session_state.fractal_params.copy(),
+                    'type': getattr(st.session_state, 'current_fractal_type', 'mandelbrot'),
+                    'timestamp': time.time()
+                }
+                st.session_state.bookmark_history.append(bookmark)
+                st.success("Location bookmarked!")
+        
+        with col2:
+            if st.button("🔙 Previous Location") and st.session_state.zoom_history:
+                prev_params = st.session_state.zoom_history.pop()
+                st.session_state.fractal_params.update(prev_params)
+                st.rerun()
+        
+        # Mathematical formula display
+        with st.expander("🔢 Mathematical Formula", expanded=False):
+            fractal_type = getattr(st.session_state, 'current_fractal_type', 'mandelbrot')
+            
+            formulas = {
+                'mandelbrot': "z_{n+1} = z_n² + c",
+                'julia': "z_{n+1} = z_n² + c (where c is constant)",
+                'burning_ship': "z_{n+1} = (|Re(z_n)| + i|Im(z_n)|)² + c",
+                'tricorn': "z_{n+1} = z̄_n² + c (conjugate)",
+                'newton': "z_{n+1} = z_n - (z_n³ - 1)/(3z_n²)",
+                'phoenix': "z_{n+1} = z_n² + c + 0.5 * z_{n-1}"
+            }
+            
+            st.latex(formulas.get(fractal_type, "z_{n+1} = f(z_n)"))
+            
+            # Mathematical explanation
+            explanations = {
+                'mandelbrot': "The Mandelbrot set consists of complex numbers c for which the iteration z_{n+1} = z_n² + c does not diverge when starting from z_0 = 0.",
+                'julia': "Julia sets are related to the Mandelbrot set but use a fixed complex parameter c while varying the starting point z_0.",
+                'burning_ship': "The Burning Ship fractal uses the absolute values of real and imaginary components before squaring.",
+                'tricorn': "The Tricorn uses the complex conjugate of z_n, creating a different symmetry pattern.",
+                'newton': "Newton fractals show the basins of attraction for Newton's method applied to finding roots of polynomials.",
+                'phoenix': "The Phoenix fractal includes the previous iteration value, creating more complex dynamics."
+            }
+            
+            st.write(explanations.get(fractal_type, "Mathematical fractal based on iterative complex number calculations."))
+        
+        # Click-to-zoom functionality info
+        st.image(st.session_state.current_fractal, use_container_width=True, 
+                caption="💡 Tip: Use presets to explore interesting regions, bookmark locations you want to return to")
+        
+        # Mathematical properties display
+        params = st.session_state.fractal_params
+        st.info(f"**Current Location:** Real: {params['center_real']:.6f}, Imaginary: {params['center_imag']:.6f} | "
+               f"**Zoom:** {params['zoom']:.1f}x | **Type:** {fractal_type.replace('_', ' ').title()}")
+    
+    else:
+        # First-time user guidance
+        st.info("👆 Welcome to Aoin's Fractal Studio! Click 'Generate Fractal' to start exploring mathematical patterns.")
+        
+        # Educational content for new users
+        with st.expander("🎓 What are Fractals?", expanded=True):
+            st.write("""
+            **Fractals** are mathematical objects that display self-similar patterns at every scale. They are generated using iterative formulas applied to complex numbers.
+            
+            **Key Concepts:**
+            - **Complex Plane**: Uses real and imaginary number coordinates
+            - **Iteration**: Repeated application of mathematical formulas
+            - **Escape Time**: How quickly values diverge from the origin
+            - **Self-Similarity**: Patterns repeat at different zoom levels
+            
+            **Popular Fractals:**
+            - **Mandelbrot Set**: The most famous fractal, showing incredible complexity
+            - **Julia Sets**: Related patterns with different mathematical properties
+            - **Newton Fractals**: Show convergence patterns for root-finding algorithms
+            """)
+    
+    # Quick zoom controls
+    st.subheader("⚡ Quick Navigation")
+    nav_col1, nav_col2, nav_col3, nav_col4 = st.columns(4)
+    
+    with nav_col1:
+        if st.button("🔍 Zoom In 2x"):
+            st.session_state.zoom_history.append(st.session_state.fractal_params.copy())
+            st.session_state.fractal_params['zoom'] *= 2
+            st.rerun()
+    
+    with nav_col2:
+        if st.button("🔍 Zoom Out 2x"):
+            st.session_state.zoom_history.append(st.session_state.fractal_params.copy())
+            st.session_state.fractal_params['zoom'] /= 2
+            st.rerun()
+    
+    with nav_col3:
+        if st.button("🏠 Reset View"):
+            st.session_state.zoom_history.append(st.session_state.fractal_params.copy())
+            st.session_state.fractal_params.update({
+                'zoom': 1.0, 'center_real': -0.7269, 'center_imag': 0.1889
+            })
+            st.rerun()
+    
+    with nav_col4:
+        if st.button("🎯 Center Origin"):
+            st.session_state.zoom_history.append(st.session_state.fractal_params.copy())
+            st.session_state.fractal_params.update({
+                'center_real': 0.0, 'center_imag': 0.0
+            })
+            st.rerun()
     
     # Generate button (prominent placement)
     if st.button("🎨 Generate Fractal", key="generate_fractal", help="Create new fractal with current settings"):
@@ -691,7 +1100,7 @@ with tab1:
             
             with col1:
                 fractal_type = st.selectbox("Fractal Type", 
-                    ["mandelbrot", "julia", "burning_ship", "tricorn"],
+                    ["mandelbrot", "julia", "burning_ship", "tricorn", "newton", "phoenix"],
                     format_func=lambda x: x.replace('_', ' ').title(),
                     help="Choose the mathematical formula to visualize")
                 zoom = st.slider("Zoom Level", 0.1, 500.0, st.session_state.fractal_params['zoom'], 0.1,
@@ -706,19 +1115,32 @@ with tab1:
                                       help="Vertical position in the complex plane")
                 resolution = st.selectbox("Resolution", ["400x300", "600x450", "800x600", "1024x768"], index=1,
                                          help="Higher resolution creates larger, more detailed images")
-                colormap = st.selectbox("Color Scheme", ["hot", "viridis", "plasma", "magma", "inferno", "cool", "spring"],
+                colormap = st.selectbox("Color Scheme", ["hot", "viridis", "plasma", "magma", "inferno", "cool", "spring", "winter", "autumn"],
                                       help="Color palette for the fractal visualization")
                 mantra_idx = st.selectbox("Sanskrit Overlay", range(len(SANSKRIT_MANTRAS)), 
                                         format_func=lambda x: SANSKRIT_MANTRAS[x][1],
                                         help="Traditional mantra to overlay on the image")
                 
-                # Julia set parameter (only show for Julia type)
+                # Advanced controls
+                with st.expander("🔬 Advanced Options"):
+                    escape_radius = st.slider("Escape Radius", 2.0, 10.0, 2.0, 0.1,
+                                            help="Mathematical threshold for escape-time algorithm")
+                    smooth_coloring = st.checkbox("Smooth Coloring", value=True,
+                                                 help="Use continuous coloring for smoother gradients")
+                    show_coordinates = st.checkbox("Show Coordinates", value=False,
+                                                  help="Display coordinate grid overlay")
+                
+                # Fractal-specific parameters
                 if fractal_type == "julia":
                     st.markdown("**Julia Set Parameters:**")
                     julia_real = st.slider("Julia C (Real)", -2.0, 2.0, -0.7, 0.01)
                     julia_imag = st.slider("Julia C (Imag)", -2.0, 2.0, 0.27015, 0.01)
                     julia_c = julia_real + julia_imag * 1j
                     st.session_state.julia_c = julia_c
+                elif fractal_type == "newton":
+                    st.info("Newton fractal: Roots of z³ - 1 = 0")
+                elif fractal_type == "phoenix":
+                    st.info("Phoenix fractal: Uses previous iteration in calculation")
                 else:
                     julia_c = -0.7 + 0.27015j
                     st.session_state.julia_c = julia_c
@@ -800,6 +1222,128 @@ with tab2:
         st.write(f"- Harmonics: {harmony_freq * 1.5:.1f} Hz, {harmony_freq * 2.0:.1f} Hz")
     else:
         st.info("Click 'Generate Audio' to create sound")
+
+with tab3:
+    st.header("Animation Generator")
+    
+    # Animation controls
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.subheader("Animation Settings")
+        anim_type = st.selectbox("Animation Type", 
+            ["zoom_in", "zoom_out", "rotate_center", "parameter_sweep"],
+            format_func=lambda x: x.replace('_', ' ').title())
+        
+        frames = st.slider("Number of Frames", 10, 100, 30)
+        frame_rate = st.slider("Frame Rate (FPS)", 1, 30, 10)
+        
+        # Animation-specific parameters
+        if anim_type in ["zoom_in", "zoom_out"]:
+            zoom_factor = st.slider("Zoom Factor", 1.1, 10.0, 2.0)
+        elif anim_type == "rotate_center":
+            rotation_steps = st.slider("Rotation Steps", 4, 36, 12)
+        elif anim_type == "parameter_sweep":
+            sweep_param = st.selectbox("Parameter to Sweep", ["iterations", "julia_real", "julia_imag"])
+    
+    with col2:
+        st.subheader("Preview Settings")
+        preview_size = st.selectbox("Preview Resolution", ["200x150", "300x225", "400x300"], index=1)
+        preview_colormap = st.selectbox("Animation Colormap", ["hot", "viridis", "plasma", "magma"], index=0)
+        
+        # Progress indicator
+        if 'animation_progress' in st.session_state:
+            st.progress(st.session_state.animation_progress)
+    
+    # Generate animation
+    if st.button("🎬 Generate Animation"):
+        st.session_state.animation_frames = []
+        progress_bar = st.progress(0)
+        status_text = st.empty()
+        
+        # Parse preview size
+        anim_width, anim_height = map(int, preview_size.split('x'))
+        
+        with st.spinner("Creating animation frames..."):
+            for i in range(frames):
+                # Update progress
+                progress = i / frames
+                progress_bar.progress(progress)
+                status_text.text(f"Generating frame {i+1}/{frames}")
+                
+                # Calculate frame parameters based on animation type
+                if anim_type == "zoom_in":
+                    current_zoom = st.session_state.fractal_params['zoom'] * (zoom_factor ** (i / frames))
+                elif anim_type == "zoom_out":
+                    current_zoom = st.session_state.fractal_params['zoom'] / (zoom_factor ** (i / frames))
+                elif anim_type == "rotate_center":
+                    angle = 2 * np.pi * i / frames
+                    offset = 0.1 * np.exp(1j * angle)
+                    current_zoom = st.session_state.fractal_params['zoom']
+                    center_offset = complex(st.session_state.fractal_params['center_real'], 
+                                          st.session_state.fractal_params['center_imag']) + offset
+                else:  # parameter_sweep
+                    current_zoom = st.session_state.fractal_params['zoom']
+                    center_offset = complex(st.session_state.fractal_params['center_real'], 
+                                          st.session_state.fractal_params['center_imag'])
+                
+                # Generate frame
+                if anim_type in ["zoom_in", "zoom_out"]:
+                    fractal = generate_fractal(
+                        fractal_type="mandelbrot",
+                        width=anim_width, height=anim_height, max_iter=100,
+                        zoom=current_zoom,
+                        center_real=st.session_state.fractal_params['center_real'],
+                        center_imag=st.session_state.fractal_params['center_imag']
+                    )
+                elif anim_type == "rotate_center":
+                    fractal = generate_fractal(
+                        fractal_type="mandelbrot",
+                        width=anim_width, height=anim_height, max_iter=100,
+                        zoom=current_zoom,
+                        center_real=center_offset.real,
+                        center_imag=center_offset.imag
+                    )
+                else:  # parameter_sweep
+                    if sweep_param == "iterations":
+                        iter_val = 50 + int(150 * i / frames)
+                        fractal = generate_fractal(
+                            fractal_type="mandelbrot",
+                            width=anim_width, height=anim_height, max_iter=iter_val,
+                            zoom=current_zoom,
+                            center_real=st.session_state.fractal_params['center_real'],
+                            center_imag=st.session_state.fractal_params['center_imag']
+                        )
+                
+                # Convert to image
+                fractal_norm = (fractal - fractal.min()) / (fractal.max() - fractal.min())
+                cmap = plt.get_cmap(preview_colormap)
+                colored = cmap(fractal_norm)
+                frame_array = (colored[:, :, :3] * 255).astype(np.uint8)
+                frame_image = Image.fromarray(frame_array)
+                
+                st.session_state.animation_frames.append(frame_array)
+        
+        progress_bar.progress(1.0)
+        status_text.text(f"Animation complete! {frames} frames generated.")
+        st.success(f"Generated {frames} frames for animation")
+    
+    # Display animation preview
+    if st.session_state.animation_frames:
+        st.subheader("Animation Preview")
+        
+        # Simple frame selector for preview
+        frame_idx = st.slider("Preview Frame", 0, len(st.session_state.animation_frames)-1, 0)
+        st.image(st.session_state.animation_frames[frame_idx], caption=f"Frame {frame_idx+1}/{len(st.session_state.animation_frames)}")
+        
+        # Animation stats
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.metric("Total Frames", len(st.session_state.animation_frames))
+        with col2:
+            st.metric("Duration", f"{len(st.session_state.animation_frames)/frame_rate:.1f}s")
+        with col3:
+            st.metric("Frame Rate", f"{frame_rate} FPS")
 
 with tab2:
     st.header("Audio Synthesis")
