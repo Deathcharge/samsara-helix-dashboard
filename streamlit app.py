@@ -523,7 +523,7 @@ def add_sanskrit_overlay(fractal_array, mantra_index=0, colormap='hot'):
         return img_array
 
 def generate_audio(base_freq=136.1, harmony_freq=432.0, duration=10, sample_rate=22050):
-    """Generate multi-frequency audio synthesis"""
+    """Generate multi-frequency audio synthesis with visualization data"""
     t = np.linspace(0, duration, int(sample_rate * duration))
     
     # Generate composite waveform
@@ -532,15 +532,31 @@ def generate_audio(base_freq=136.1, harmony_freq=432.0, duration=10, sample_rate
     # Base frequency (Om)
     audio += 0.3 * np.sin(2 * np.pi * base_freq * t)
     
-    # Harmony frequency
+    # Harmony frequency with breathing modulation
     harmony_envelope = 0.7 + 0.3 * np.sin(2 * np.pi * 0.1 * t)  # Slow modulation
     audio += 0.2 * harmony_envelope * np.sin(2 * np.pi * harmony_freq * t)
     
-    # Additional harmonics
+    # Additional harmonics for richness
     audio += 0.15 * np.sin(2 * np.pi * (harmony_freq * 1.5) * t)
     audio += 0.1 * np.sin(2 * np.pi * (harmony_freq * 2.0) * t)
     
-    # Normalize
+    # Create visualization data (simplified FFT for bars)
+    chunk_size = len(t) // 20  # 20 bars
+    visualization_data = []
+    for i in range(20):
+        start_idx = i * chunk_size
+        end_idx = min((i + 1) * chunk_size, len(audio))
+        chunk_rms = np.sqrt(np.mean(audio[start_idx:end_idx]**2))
+        visualization_data.append(chunk_rms)
+    
+    # Normalize visualization data
+    max_val = max(visualization_data) if visualization_data else 1
+    visualization_data = [v/max_val for v in visualization_data]
+    
+    # Store for visualization
+    st.session_state.audio_visualization = visualization_data
+    
+    # Normalize audio
     audio = audio / np.max(np.abs(audio)) * 0.8
     
     return audio, sample_rate
@@ -975,7 +991,7 @@ with tab1:
                 st.session_state.fractal_params.update(prev_params)
                 st.rerun()
         
-        # Mathematical formula display
+        # Mathematical formula display with animation
         with st.expander("🔢 Mathematical Formula", expanded=False):
             fractal_type = getattr(st.session_state, 'current_fractal_type', 'mandelbrot')
             
@@ -988,9 +1004,12 @@ with tab1:
                 'phoenix': "z_{n+1} = z_n² + c + 0.5 * z_{n-1}"
             }
             
+            # Animated mathematical formula display
+            st.markdown('<div class="math-formula">', unsafe_allow_html=True)
             st.latex(formulas.get(fractal_type, "z_{n+1} = f(z_n)"))
+            st.markdown('</div>', unsafe_allow_html=True)
             
-            # Mathematical explanation
+            # Mathematical explanation with visual elements
             explanations = {
                 'mandelbrot': "The Mandelbrot set consists of complex numbers c for which the iteration z_{n+1} = z_n² + c does not diverge when starting from z_0 = 0.",
                 'julia': "Julia sets are related to the Mandelbrot set but use a fixed complex parameter c while varying the starting point z_0.",
@@ -1001,15 +1020,49 @@ with tab1:
             }
             
             st.write(explanations.get(fractal_type, "Mathematical fractal based on iterative complex number calculations."))
+            
+            # Interactive parameter visualization
+            if fractal_type == "mandelbrot":
+                st.markdown("**Parameter Space Visualization:**")
+                # Simple parameter space indicator
+                params = st.session_state.fractal_params
+                real_pos = (params['center_real'] + 2) / 4 * 100  # Normalize to 0-100%
+                imag_pos = (params['center_imag'] + 2) / 4 * 100
+                
+                position_html = f'''
+                <div style="position: relative; width: 100%; height: 100px; background: linear-gradient(45deg, #1a1a2e, #16213e); border-radius: 10px; margin: 10px 0;">
+                    <div style="position: absolute; left: {real_pos}%; top: {imag_pos}%; width: 10px; height: 10px; background: #4A90E2; border-radius: 50%; transform: translate(-50%, -50%); box-shadow: 0 0 15px #4A90E2; animation: pulse 2s infinite;"></div>
+                    <div style="position: absolute; bottom: 5px; left: 5px; color: #4A90E2; font-size: 12px;">Real: {params['center_real']:.3f}</div>
+                    <div style="position: absolute; bottom: 5px; right: 5px; color: #4A90E2; font-size: 12px;">Imag: {params['center_imag']:.3f}</div>
+                </div>
+                '''
+                st.markdown(position_html, unsafe_allow_html=True)
         
-        # Click-to-zoom functionality info
+        # Enhanced fractal display with container
+        st.markdown('<div class="fractal-container">', unsafe_allow_html=True)
         st.image(st.session_state.current_fractal, use_container_width=True, 
                 caption="💡 Tip: Use presets to explore interesting regions, bookmark locations you want to return to")
+        st.markdown('</div>', unsafe_allow_html=True)
         
-        # Mathematical properties display
+        # Animated mathematical properties display
         params = st.session_state.fractal_params
-        st.info(f"**Current Location:** Real: {params['center_real']:.6f}, Imaginary: {params['center_imag']:.6f} | "
-               f"**Zoom:** {params['zoom']:.1f}x | **Type:** {fractal_type.replace('_', ' ').title()}")
+        fractal_type = getattr(st.session_state, 'current_fractal_type', 'mandelbrot')
+        
+        # Create animated info display
+        info_html = f'''
+        <div style="background: linear-gradient(135deg, rgba(74, 144, 226, 0.1), rgba(123, 104, 238, 0.1)); 
+                    padding: 1rem; border-radius: 15px; margin: 1rem 0; 
+                    border: 1px solid rgba(74, 144, 226, 0.3);
+                    animation: pulse 3s infinite;">
+            <div style="display: flex; justify-content: space-between; flex-wrap: wrap;">
+                <div><strong>🔢 Type:</strong> <span class="loading-wave">{fractal_type.replace('_', ' ').title()}</span></div>
+                <div><strong>🔍 Zoom:</strong> <span class="loading-wave">{params['zoom']:.1f}x</span></div>
+                <div><strong>📍 Real:</strong> <span class="loading-wave">{params['center_real']:.6f}</span></div>
+                <div><strong>📍 Imag:</strong> <span class="loading-wave">{params['center_imag']:.6f}</span></div>
+            </div>
+        </div>
+        '''
+        st.markdown(info_html, unsafe_allow_html=True)
     
     else:
         # First-time user guidance
@@ -1164,7 +1217,7 @@ with tab1:
                         fractal_type=fractal_type,
                         width=width, height=height, max_iter=iterations,
                         zoom=zoom, center_real=center_real, center_imag=center_imag,
-                        julia_c=julia_c
+                        julia_c=getattr(st.session_state, 'julia_c', -0.7 + 0.27015j)
                     )
                     fractal_with_overlay = add_sanskrit_overlay(fractal, mantra_idx, colormap)
                     st.session_state.current_fractal = fractal_with_overlay
