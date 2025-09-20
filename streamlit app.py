@@ -18,7 +18,10 @@ st.set_page_config(
 # Enhanced CSS with glassmorphism, animations and theme support
 theme_css = ""
 
-if st.session_state.theme_mode == "Dark":
+# Get theme mode with default fallback
+current_theme = getattr(st.session_state, 'theme_mode', 'Dark')
+
+if current_theme == "Dark":
     theme_css = """
     .stApp {
         background: linear-gradient(135deg, #0e1117 0%, #1a1a2e 50%, #16213e 100%);
@@ -61,7 +64,7 @@ if st.session_state.theme_mode == "Dark":
         border-radius: 15px;
     }
     """
-elif st.session_state.theme_mode == "Light":
+elif current_theme == "Light":
     theme_css = """
     .stApp {
         background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 50%, #e9ecef 100%);
@@ -297,7 +300,7 @@ st.markdown(f"""
 </div>
 
 <div class="theme-indicator">
-    🎨 {st.session_state.theme_mode} Mode
+    🎨 {current_theme} Mode
 </div>
 
 <div class="performance-hud">
@@ -788,46 +791,215 @@ with tab1:
         if st.button("🔒 Lock" if not st.session_state.locked_controls else "🔓 Unlock"):
             st.session_state.locked_controls = not st.session_state.locked_controls
     
-    # Display current fractal
+    # Display current fractal with enhanced features
     if st.session_state.current_fractal is not None:
-        st.subheader("🖼️ Current Fractal")
-        st.image(st.session_state.current_fractal, use_container_width=True)
         
-        # Mathematical analysis
-        analysis_col1, analysis_col2, analysis_col3 = st.columns(3)
+        # Comparison Mode
+        if st.session_state.fractal_comparison['enabled']:
+            st.subheader("🔍 Fractal Comparison Mode")
+            comp_col1, comp_col2 = st.columns(2)
+            
+            with comp_col1:
+                st.markdown("**Fractal A (Current)**")
+                if st.session_state.interactive_mode:
+                    st.markdown('<div class="coordinates-display">🎯 Interactive Mode: Click to zoom</div>', unsafe_allow_html=True)
+                
+                st.markdown('<div class="fractal-container">', unsafe_allow_html=True)
+                st.image(st.session_state.current_fractal, use_container_width=True)
+                st.markdown('</div>', unsafe_allow_html=True)
+                
+                # Store as comparison fractal A
+                if st.button("📌 Set as Reference", key="set_ref_a"):
+                    st.session_state.fractal_comparison['fractal_a'] = {
+                        'image': st.session_state.current_fractal,
+                        'params': st.session_state.fractal_params.copy(),
+                        'type': st.session_state.current_fractal_type
+                    }
+                    st.success("Set as reference fractal!")
+            
+            with comp_col2:
+                st.markdown("**Fractal B (Reference)**")
+                if st.session_state.fractal_comparison['fractal_a'] is not None:
+                    ref_fractal = st.session_state.fractal_comparison['fractal_a']
+                    st.markdown('<div class="fractal-container">', unsafe_allow_html=True)
+                    st.image(ref_fractal['image'], use_container_width=True)
+                    st.markdown('</div>', unsafe_allow_html=True)
+                    
+                    # Parameter comparison
+                    st.markdown("**Parameter Comparison:**")
+                    current_params = st.session_state.fractal_params
+                    ref_params = ref_fractal['params']
+                    
+                    zoom_diff = current_params['zoom'] / ref_params['zoom']
+                    st.write(f"• **Zoom Ratio**: {zoom_diff:.2f}x")
+                    
+                    real_diff = abs(current_params['center_real'] - ref_params['center_real'])
+                    imag_diff = abs(current_params['center_imag'] - ref_params['center_imag'])
+                    st.write(f"• **Distance**: {np.sqrt(real_diff**2 + imag_diff**2):.6f}")
+                    
+                    iter_diff = current_params['iterations'] - ref_params['iterations']
+                    st.write(f"• **Iteration Δ**: {iter_diff:+d}")
+                else:
+                    st.info("No reference fractal set. Click 'Set as Reference' to compare.")
         
-        with analysis_col1:
-            if st.session_state.performance_stats["render_times"]:
-                avg_render = np.mean(st.session_state.performance_stats["render_times"][-5:])
-                st.metric("Avg Render Time", f"{avg_render:.2f}s")
-            else:
-                st.metric("Avg Render Time", "N/A")
+        else:
+            # Standard single fractal display
+            st.subheader("🖼️ Current Fractal")
+            
+            # Interactive mode indicator
+            if st.session_state.interactive_mode:
+                st.markdown('<div class="coordinates-display">🎯 Interactive Mode: Click to zoom to point</div>', unsafe_allow_html=True)
+            
+            # Enhanced fractal container
+            st.markdown('<div class="fractal-container">', unsafe_allow_html=True)
+            st.image(st.session_state.current_fractal, use_container_width=True)
+            st.markdown('</div>', unsafe_allow_html=True)
+            
+            # Interactive click-to-zoom simulation
+            if st.session_state.interactive_mode:
+                zoom_target_col1, zoom_target_col2 = st.columns(2)
+                with zoom_target_col1:
+                    if st.button("🎯 Zoom to Center", key="zoom_center"):
+                        st.session_state.fractal_params['zoom'] *= 2
+                        if st.session_state.auto_mode:
+                            st.rerun()
+                with zoom_target_col2:
+                    if st.button("🔍 Zoom to Edge", key="zoom_edge"):
+                        st.session_state.fractal_params['center_real'] += 0.1 / st.session_state.fractal_params['zoom']
+                        st.session_state.fractal_params['zoom'] *= 1.5
+                        if st.session_state.auto_mode:
+                            st.rerun()
         
-        with analysis_col2:
-            zoom_level = st.session_state.fractal_params['zoom']
-            if zoom_level < 1:
-                depth_desc = "Wide View"
-            elif zoom_level < 10:
-                depth_desc = "Standard"
-            elif zoom_level < 100:
-                depth_desc = "Deep Zoom"
-            else:
-                depth_desc = "Ultra Deep"
-            st.metric("Zoom Depth", depth_desc)
+        # Enhanced Mathematical Analysis
+        if st.session_state.advanced_mode:
+            st.markdown('<div class="math-panel">', unsafe_allow_html=True)
+            
+            analysis_col1, analysis_col2, analysis_col3, analysis_col4 = st.columns(4)
+            
+            with analysis_col1:
+                if st.session_state.performance_stats["render_times"]:
+                    avg_render = np.mean(st.session_state.performance_stats["render_times"][-5:])
+                    st.metric("Render Time", f"{avg_render:.3f}s")
+                else:
+                    st.metric("Render Time", "N/A")
+            
+            with analysis_col2:
+                zoom_level = st.session_state.fractal_params['zoom']
+                if zoom_level < 1:
+                    depth_desc = "Wide"
+                elif zoom_level < 10:
+                    depth_desc = "Standard"
+                elif zoom_level < 100:
+                    depth_desc = "Deep"
+                elif zoom_level < 1000:
+                    depth_desc = "Ultra Deep"
+                else:
+                    depth_desc = "Extreme"
+                st.metric("Zoom Class", depth_desc)
+            
+            with analysis_col3:
+                # Calculate complexity score
+                iterations = st.session_state.fractal_params['iterations']
+                zoom = st.session_state.fractal_params['zoom']
+                complexity = min(100, (iterations * np.log(zoom + 1)) / 10)
+                st.metric("Complexity", f"{complexity:.1f}%")
+            
+            with analysis_col4:
+                fractal_type = st.session_state.current_fractal_type.replace('_', ' ').title()
+                st.metric("Type", fractal_type)
+            
+            # Detailed mathematical information
+            params = st.session_state.fractal_params
+            st.markdown("**🔢 Mathematical Properties:**")
+            st.code(f"""
+Complex Center: {params['center_real']:.8f} + {params['center_imag']:.8f}i
+Zoom Factor: {params['zoom']:.6f}x
+View Window: {3.0/params['zoom']:.8f} units
+Iteration Limit: {params['iterations']}
+Resolution: {params['width']}×{params['height']} pixels
+Pixel Scale: {3.0/(params['zoom']*params['width']):.2e} units/pixel
+            """, language="python")
+            
+            st.markdown('</div>', unsafe_allow_html=True)
+        else:
+            # Standard analysis
+            analysis_col1, analysis_col2, analysis_col3 = st.columns(3)
+            
+            with analysis_col1:
+                if st.session_state.performance_stats["render_times"]:
+                    avg_render = np.mean(st.session_state.performance_stats["render_times"][-5:])
+                    st.metric("Avg Render Time", f"{avg_render:.2f}s")
+                else:
+                    st.metric("Avg Render Time", "N/A")
+            
+            with analysis_col2:
+                zoom_level = st.session_state.fractal_params['zoom']
+                if zoom_level < 1:
+                    depth_desc = "Wide View"
+                elif zoom_level < 10:
+                    depth_desc = "Standard"
+                elif zoom_level < 100:
+                    depth_desc = "Deep Zoom"
+                else:
+                    depth_desc = "Ultra Deep"
+                st.metric("Zoom Depth", depth_desc)
+            
+            with analysis_col3:
+                st.metric("Fractal Type", st.session_state.current_fractal_type.replace('_', ' ').title())
         
-        with analysis_col3:
-            st.metric("Fractal Type", st.session_state.current_fractal_type.replace('_', ' ').title())
-        
-        # Current parameters display
+        # Current parameters display (enhanced)
         params = st.session_state.fractal_params
-        st.info(f"**Location:** Real: {params['center_real']:.6f}, Imaginary: {params['center_imag']:.6f} | "
-               f"**Zoom:** {params['zoom']:.1f}x | **Type:** {st.session_state.current_fractal_type.replace('_', ' ').title()}")
+        st.markdown('<div class="glass-panel">', unsafe_allow_html=True)
+        st.info(f"**📍 Location:** `{params['center_real']:.8f} + {params['center_imag']:.8f}i` | "
+               f"**🔍 Zoom:** `{params['zoom']:.3f}x` | **🔄 Iterations:** `{params['iterations']}` | "
+               f"**🎨 Type:** `{st.session_state.current_fractal_type.replace('_', ' ').title()}`")
+        st.markdown('</div>', unsafe_allow_html=True)
         
-        # Current mantra display
+        # Current mantra display (enhanced)
         devanagari, transliteration, meaning = SANSKRIT_MANTRAS[st.session_state.current_mantra_idx]
-        st.markdown(f"**Current Mantra:** {devanagari} ({transliteration}) - *{meaning}*")
+        st.markdown(f"**🕉️ Current Mantra:** {devanagari} (*{transliteration}*) - *{meaning}*")
+        
+        # Quick save option
+        if st.button("💾 Quick Save to Gallery", key="quick_save"):
+            gallery_item = {
+                'timestamp': time.time(),
+                'params': st.session_state.fractal_params.copy(),
+                'image': st.session_state.current_fractal,
+                'fractal_type': st.session_state.current_fractal_type,
+                'colormap': st.session_state.current_colormap
+            }
+            st.session_state.gallery.append(gallery_item)
+            st.success("💾 Saved to gallery!")
+            
     else:
+        # Enhanced welcome message
+        st.markdown('<div class="glass-panel">', unsafe_allow_html=True)
+        st.markdown("### 🌟 Welcome to Aoin's Fractal Studio")
+        st.markdown("**Mathematical Beauty • Digital Consciousness • Infinite Exploration**")
         st.info("👆 Click the **GENERATE FRACTAL** button above to create your first visualization!")
+        
+        # Quick start options
+        quick_col1, quick_col2, quick_col3 = st.columns(3)
+        with quick_col1:
+            if st.button("🌊 Start with Classic Mandelbrot"):
+                st.session_state.fractal_params.update({
+                    'zoom': 1.0, 'center_real': -0.7269, 'center_imag': 0.1889
+                })
+                st.session_state.current_fractal_type = "mandelbrot"
+        with quick_col2:
+            if st.button("🔥 Try Burning Ship"):
+                st.session_state.fractal_params.update({
+                    'zoom': 1.0, 'center_real': -1.775, 'center_imag': 0.0
+                })
+                st.session_state.current_fractal_type = "burning_ship"
+        with quick_col3:
+            if st.button("✨ Explore Julia Set"):
+                st.session_state.fractal_params.update({
+                    'zoom': 1.0, 'center_real': 0.0, 'center_imag': 0.0
+                })
+                st.session_state.current_fractal_type = "julia"
+        
+        st.markdown('</div>', unsafe_allow_html=True)
     
     # Parameters section - Redesigned for precision and safety
     if not st.session_state.locked_controls:
