@@ -15,6 +15,95 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
+# Enhanced CSS with animations
+st.markdown("""
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
+    
+    .main > div { padding: 0.5rem !important; }
+    .stSlider > div > div > div > div { background-color: #4A90E2; }
+    
+    .stButton > button { 
+        width: 100%; height: 3rem; font-size: 1.1rem;
+        background: linear-gradient(45deg, #4A90E2, #7B68EE);
+        color: white; border: none; border-radius: 15px;
+        margin: 0.25rem 0; box-shadow: 0 4px 15px rgba(74, 144, 226, 0.3);
+        transition: all 0.3s ease; position: relative; overflow: hidden;
+    }
+    
+    .stButton > button:hover {
+        transform: translateY(-2px); box-shadow: 0 8px 25px rgba(74, 144, 226, 0.4);
+        background: linear-gradient(45deg, #5A9FF2, #8B78FE);
+    }
+    
+    .stButton > button::before {
+        content: ''; position: absolute; top: 0; left: -100%;
+        width: 100%; height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+        transition: left 0.5s;
+    }
+    
+    .stButton > button:hover::before { left: 100%; }
+    
+    .floating-particles {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        pointer-events: none; z-index: -1; overflow: hidden;
+    }
+    
+    .particle {
+        position: absolute; width: 4px; height: 4px;
+        background: radial-gradient(circle, #4A90E2, transparent);
+        border-radius: 50%; animation: float 15s infinite linear; opacity: 0.6;
+    }
+    
+    @keyframes float {
+        0% { transform: translateY(100vh) rotate(0deg); opacity: 0; }
+        10% { opacity: 0.6; }
+        90% { opacity: 0.6; }
+        100% { transform: translateY(-100px) rotate(360deg); opacity: 0; }
+    }
+    
+    .audio-visualizer {
+        width: 100%; height: 60px;
+        background: linear-gradient(90deg, #1a1a2e, #16213e);
+        border-radius: 10px; position: relative; overflow: hidden; margin: 1rem 0;
+    }
+    
+    .audio-bar {
+        position: absolute; bottom: 0; width: 4px;
+        background: linear-gradient(0deg, #4A90E2, #7B68EE);
+        border-radius: 2px; animation: audio-pulse 0.5s infinite ease-in-out alternate;
+    }
+    
+    @keyframes audio-pulse {
+        0% { height: 10px; }
+        100% { height: 50px; }
+    }
+    
+    .fractal-container {
+        position: relative; border-radius: 15px; overflow: hidden;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.3); transition: all 0.3s ease;
+    }
+    
+    .fractal-container:hover {
+        transform: scale(1.02); box-shadow: 0 15px 40px rgba(74, 144, 226, 0.3);
+    }
+    
+    @media (max-width: 768px) {
+        .stSlider { margin: 0.25rem 0; }
+        .particle { width: 2px; height: 2px; }
+    }
+</style>
+
+<div class="floating-particles">
+    <div class="particle" style="left: 10%; animation-delay: 0s;"></div>
+    <div class="particle" style="left: 30%; animation-delay: 4s;"></div>
+    <div class="particle" style="left: 50%; animation-delay: 8s;"></div>
+    <div class="particle" style="left: 70%; animation-delay: 12s;"></div>
+    <div class="particle" style="left: 90%; animation-delay: 16s;"></div>
+</div>
+""", unsafe_allow_html=True)
+
 # Initialize session state
 if 'fractal_params' not in st.session_state:
     st.session_state.fractal_params = {
@@ -55,6 +144,21 @@ if 'gallery' not in st.session_state:
 if 'start_time' not in st.session_state:
     st.session_state.start_time = time.time()
 
+if 'bookmark_history' not in st.session_state:
+    st.session_state.bookmark_history = []
+
+if 'zoom_history' not in st.session_state:
+    st.session_state.zoom_history = []
+
+if 'current_fractal_type' not in st.session_state:
+    st.session_state.current_fractal_type = "mandelbrot"
+
+if 'current_colormap' not in st.session_state:
+    st.session_state.current_colormap = "hot"
+
+if 'current_mantra_idx' not in st.session_state:
+    st.session_state.current_mantra_idx = 0
+
 # Sanskrit mantras
 SANSKRIT_MANTRAS = [
     ("अहं ब्रह्मास्मि", "Aham Brahmasmi", "I am Brahman"),
@@ -64,7 +168,9 @@ SANSKRIT_MANTRAS = [
 ]
 
 def generate_fractal(fractal_type="mandelbrot", width=600, height=450, max_iter=100, zoom=1.0, center_real=-0.7269, center_imag=0.1889, julia_c=(-0.7+0.27015j)):
-    """Generate different types of fractals"""
+    """Generate different types of fractals with improved algorithms"""
+    start_time = time.time()
+    
     # Calculate bounds based on zoom and center
     scale = 3.0 / zoom
     x_min = center_real - scale/2
@@ -116,9 +222,45 @@ def generate_fractal(fractal_type="mandelbrot", width=600, height=450, max_iter=
             escaped = (np.abs(Z) > 2) & (escape_time == 0)
             if np.any(escaped):
                 escape_time[escaped] = i + 1 - np.log2(np.log2(np.abs(Z[escaped])))
+                
+    elif fractal_type == "newton":
+        # Newton fractal for z^3 - 1 = 0
+        Z = C.copy()
+        roots = [1, -0.5 + 0.866j, -0.5 - 0.866j]
+        for i in range(max_iter):
+            # Newton iteration for z^3 - 1 = 0
+            denom = 3 * Z**2
+            mask = np.abs(denom) > 1e-10
+            Z[mask] = Z[mask] - (Z[mask]**3 - 1) / denom[mask]
+            
+            # Check convergence to roots
+            for j, root in enumerate(roots):
+                converged = np.abs(Z - root) < 0.01
+                escape_time[converged & (escape_time == 0)] = i + j * max_iter / 3
+                
+    elif fractal_type == "phoenix":
+        # Phoenix fractal
+        Z = np.zeros_like(C)
+        Z_prev = np.zeros_like(C)
+        for i in range(max_iter):
+            mask = np.abs(Z) <= 2
+            Z_new = Z[mask]**2 + C[mask] + 0.5 * Z_prev[mask]
+            Z_prev[mask] = Z[mask]
+            Z[mask] = Z_new
+            escaped = (np.abs(Z) > 2) & (escape_time == 0)
+            if np.any(escaped):
+                escape_time[escaped] = i + 1 - np.log2(np.log2(np.abs(Z[escaped])))
     
     # Set non-escaped points
     escape_time[escape_time == 0] = max_iter
+    
+    # Track performance
+    render_time = time.time() - start_time
+    if 'performance_stats' not in st.session_state:
+        st.session_state.performance_stats = {"render_times": [], "total_fractals": 0}
+    st.session_state.performance_stats["render_times"].append(render_time)
+    st.session_state.performance_stats["total_fractals"] += 1
+    
     return escape_time
 
 def add_sanskrit_overlay(fractal_array, mantra_index=0, colormap='hot'):
@@ -213,9 +355,55 @@ tab1, tab2, tab3, tab4 = st.tabs(["🎨 Fractal", "🎵 Audio", "📊 Gallery", 
 with tab1:
     st.header("Fractal Generator")
     
+    # Quick actions bar
+    action_col1, action_col2, action_col3, action_col4, action_col5 = st.columns(5)
+    
+    with action_col1:
+        if st.button("🎲 Random", help="Generate random fractal"):
+            # Random parameters
+            st.session_state.fractal_params.update({
+                'zoom': np.random.uniform(1, 100),
+                'center_real': np.random.uniform(-2, 2),
+                'center_imag': np.random.uniform(-2, 2),
+                'iterations': np.random.choice([100, 150, 200])
+            })
+            st.rerun()
+    
+    with action_col2:
+        if st.button("📍 Bookmark", help="Save current location"):
+            bookmark = {
+                'name': f"Bookmark {len(st.session_state.bookmark_history) + 1}",
+                'params': st.session_state.fractal_params.copy(),
+                'type': st.session_state.current_fractal_type,
+                'timestamp': time.time()
+            }
+            st.session_state.bookmark_history.append(bookmark)
+            st.success("Location bookmarked!")
+    
+    with action_col3:
+        if st.button("🔙 Previous", help="Go to previous location"):
+            if st.session_state.zoom_history:
+                prev_params = st.session_state.zoom_history.pop()
+                st.session_state.fractal_params.update(prev_params)
+                st.rerun()
+    
+    with action_col4:
+        if st.button("🏠 Reset", help="Reset to default view"):
+            st.session_state.zoom_history.append(st.session_state.fractal_params.copy())
+            st.session_state.fractal_params.update({
+                'zoom': 1.0, 'center_real': -0.7269, 'center_imag': 0.1889
+            })
+            st.rerun()
+    
+    with action_col5:
+        if st.button("🔒 Lock" if not st.session_state.locked_controls else "🔓 Unlock"):
+            st.session_state.locked_controls = not st.session_state.locked_controls
+    
     # Control lock toggle
-    if st.button("🔒 Lock Controls" if not st.session_state.locked_controls else "🔓 Unlock Controls"):
-        st.session_state.locked_controls = not st.session_state.locked_controls
+    if st.session_state.locked_controls:
+        st.warning("🔒 Controls are locked to prevent accidental changes")
+    else:
+        st.success("🔓 Controls are unlocked")
     
     # Fractal presets
     st.subheader("Quick Presets")
@@ -231,22 +419,106 @@ with tab1:
     for i, (name, params) in enumerate(presets.items()):
         with preset_cols[i]:
             if st.button(f"✨ {name}", key=f"preset_{name}"):
+                st.session_state.zoom_history.append(st.session_state.fractal_params.copy())
                 st.session_state.fractal_params.update(params)
+                st.rerun()
+    
+    # Community presets
+    st.subheader("Community Favorites")
+    community_presets = {
+        "Dragon Curve": {"center_real": -0.8, "center_imag": 0.156, "zoom": 250.0, "type": "mandelbrot"},
+        "Elephant Valley": {"center_real": 0.25, "center_imag": 0.0, "zoom": 150.0, "type": "mandelbrot"},  
+        "Mystic Julia": {"center_real": 0.0, "center_imag": 0.0, "zoom": 1.0, "type": "julia"},
+        "Burning Wings": {"center_real": -1.775, "center_imag": -0.01, "zoom": 100.0, "type": "burning_ship"},
+        "Newton Roots": {"center_real": 0.0, "center_imag": 0.0, "zoom": 1.5, "type": "newton"},
+        "Phoenix Rising": {"center_real": 0.5667, "center_imag": 0.0, "zoom": 1.0, "type": "phoenix"}
+    }
+    
+    preset_cols2 = st.columns(3)
+    for i, (name, params) in enumerate(community_presets.items()):
+        col_idx = i % 3
+        with preset_cols2[col_idx]:
+            if st.button(f"🌟 {name}", key=f"community_{name}"):
+                st.session_state.zoom_history.append(st.session_state.fractal_params.copy())
+                st.session_state.fractal_params.update({
+                    'center_real': params['center_real'],
+                    'center_imag': params['center_imag'], 
+                    'zoom': params['zoom']
+                })
+                st.session_state.current_fractal_type = params['type']
+                st.success(f"Loaded {name}!")
                 st.rerun()
     
     # Display current fractal first
     if st.session_state.current_fractal is not None:
+        # Mathematical analysis section
+        st.subheader("📊 Mathematical Analysis")
+        
+        analysis_col1, analysis_col2, analysis_col3 = st.columns(3)
+        
+        with analysis_col1:
+            # Performance metric
+            if 'performance_stats' in st.session_state and st.session_state.performance_stats["render_times"]:
+                avg_render = np.mean(st.session_state.performance_stats["render_times"][-5:])
+                st.metric("Avg Render Time", f"{avg_render:.2f}s")
+            else:
+                st.metric("Avg Render Time", "N/A")
+        
+        with analysis_col2:
+            # Zoom depth indicator
+            zoom_level = st.session_state.fractal_params['zoom']
+            if zoom_level < 1:
+                depth_desc = "Wide View"
+            elif zoom_level < 10:
+                depth_desc = "Standard"
+            elif zoom_level < 100:
+                depth_desc = "Deep Zoom"
+            else:
+                depth_desc = "Ultra Deep"
+            
+            st.metric("Zoom Depth", depth_desc)
+        
+        with analysis_col3:
+            st.metric("Fractal Type", st.session_state.current_fractal_type.replace('_', ' ').title())
+        
         st.image(st.session_state.current_fractal, use_container_width=True)
         
-        # Show current info
+        # Mathematical properties display
         params = st.session_state.fractal_params
-        st.info(f"**Zoom:** {params['zoom']:.1f}x | **Center:** ({params['center_real']:.3f}, {params['center_imag']:.3f})")
+        fractal_type = st.session_state.current_fractal_type
+        st.info(f"**Location:** Real: {params['center_real']:.6f}, Imaginary: {params['center_imag']:.6f} | "
+               f"**Zoom:** {params['zoom']:.1f}x | **Type:** {fractal_type.replace('_', ' ').title()}")
+        
+        # Mathematical formula display
+        with st.expander("🔢 Mathematical Formula", expanded=False):
+            formulas = {
+                'mandelbrot': "z_{n+1} = z_n² + c",
+                'julia': "z_{n+1} = z_n² + c (where c is constant)",
+                'burning_ship': "z_{n+1} = (|Re(z_n)| + i|Im(z_n)|)² + c",
+                'tricorn': "z_{n+1} = z̄_n² + c (conjugate)",
+                'newton': "z_{n+1} = z_n - (z_n³ - 1)/(3z_n²)",
+                'phoenix': "z_{n+1} = z_n² + c + 0.5 * z_{n-1}"
+            }
+            
+            st.latex(formulas.get(fractal_type, "z_{n+1} = f(z_n)"))
+            
+            # Mathematical explanation
+            explanations = {
+                'mandelbrot': "The Mandelbrot set consists of complex numbers c for which the iteration does not diverge when starting from z_0 = 0.",
+                'julia': "Julia sets use a fixed complex parameter c while varying the starting point z_0.",
+                'burning_ship': "The Burning Ship fractal uses absolute values of real and imaginary components before squaring.",
+                'tricorn': "The Tricorn uses the complex conjugate of z_n, creating different symmetry patterns.",
+                'newton': "Newton fractals show basins of attraction for Newton's method applied to finding polynomial roots.",
+                'phoenix': "The Phoenix fractal includes the previous iteration value, creating more complex dynamics."
+            }
+            
+            st.write(explanations.get(fractal_type, "Mathematical fractal based on iterative complex number calculations."))
     
     # Generate button
     if st.button("🎨 Generate Fractal", key="generate_fractal"):
         with st.spinner("Generating fractal..."):
             fractal = generate_fractal(
-                fractal_type="mandelbrot",
+                fractal_type=st.session_state.current_fractal_type,
                 width=st.session_state.fractal_params['width'], 
                 height=st.session_state.fractal_params['height'], 
                 max_iter=st.session_state.fractal_params['iterations'],
@@ -256,8 +528,40 @@ with tab1:
             )
             
             # Add Sanskrit overlay
-            fractal_with_overlay = add_sanskrit_overlay(fractal, 0, 'hot')
+            fractal_with_overlay = add_sanskrit_overlay(
+                fractal, 
+                st.session_state.current_mantra_idx, 
+                st.session_state.current_colormap
+            )
             st.session_state.current_fractal = fractal_with_overlay
+            st.rerun()
+    
+    # Quick zoom controls
+    st.subheader("⚡ Quick Navigation")
+    nav_col1, nav_col2, nav_col3, nav_col4 = st.columns(4)
+    
+    with nav_col1:
+        if st.button("🔍 Zoom In 2x"):
+            st.session_state.zoom_history.append(st.session_state.fractal_params.copy())
+            st.session_state.fractal_params['zoom'] *= 2
+            st.rerun()
+    
+    with nav_col2:
+        if st.button("🔍 Zoom Out 2x"):
+            st.session_state.zoom_history.append(st.session_state.fractal_params.copy())
+            st.session_state.fractal_params['zoom'] /= 2
+            st.rerun()
+    
+    with nav_col3:
+        if st.button("⬆️ Move Up"):
+            st.session_state.zoom_history.append(st.session_state.fractal_params.copy())
+            st.session_state.fractal_params['center_imag'] += 0.1 / st.session_state.fractal_params['zoom']
+            st.rerun()
+    
+    with nav_col4:
+        if st.button("⬇️ Move Down"):
+            st.session_state.zoom_history.append(st.session_state.fractal_params.copy())
+            st.session_state.fractal_params['center_imag'] -= 0.1 / st.session_state.fractal_params['zoom']
             st.rerun()
     
     # Parameters section
@@ -266,13 +570,28 @@ with tab1:
             col1, col2 = st.columns(2)
             
             with col1:
+                fractal_type = st.selectbox("Fractal Type", 
+                    ["mandelbrot", "julia", "burning_ship", "tricorn", "newton", "phoenix"],
+                    index=["mandelbrot", "julia", "burning_ship", "tricorn", "newton", "phoenix"].index(st.session_state.current_fractal_type),
+                    format_func=lambda x: x.replace('_', ' ').title())
                 zoom = st.slider("Zoom Level", 0.1, 500.0, st.session_state.fractal_params['zoom'], 0.1)
                 center_real = st.slider("Center (Real)", -2.0, 2.0, st.session_state.fractal_params['center_real'], 0.001)
                 iterations = st.slider("Iterations", 50, 500, st.session_state.fractal_params['iterations'], 10)
             
             with col2:
                 center_imag = st.slider("Center (Imaginary)", -2.0, 2.0, st.session_state.fractal_params['center_imag'], 0.001)
-                resolution = st.selectbox("Resolution", ["400x300", "600x450", "800x600"], index=1)
+                resolution = st.selectbox("Resolution", ["400x300", "600x450", "800x600", "1024x768"], index=1)
+                colormap = st.selectbox("Color Scheme", ["hot", "viridis", "plasma", "magma", "inferno", "cool", "spring", "winter", "autumn"], 
+                                      index=["hot", "viridis", "plasma", "magma", "inferno", "cool", "spring", "winter", "autumn"].index(st.session_state.current_colormap))
+                mantra_idx = st.selectbox("Sanskrit Overlay", range(len(SANSKRIT_MANTRAS)), 
+                                        index=st.session_state.current_mantra_idx,
+                                        format_func=lambda x: SANSKRIT_MANTRAS[x][1])
+                
+                # Julia set parameter (only show for Julia type)
+                if fractal_type == "julia":
+                    st.markdown("**Julia Set Parameters:**")
+                    julia_real = st.slider("Julia C (Real)", -2.0, 2.0, -0.7, 0.01)
+                    julia_imag = st.slider("Julia C (Imag)", -2.0, 2.0, 0.27015, 0.01)
                 
             # Parse resolution
             width, height = map(int, resolution.split('x'))
@@ -282,8 +601,16 @@ with tab1:
                 'zoom': zoom, 'center_real': center_real, 'center_imag': center_imag,
                 'iterations': iterations, 'width': width, 'height': height
             })
+            st.session_state.current_fractal_type = fractal_type
+            st.session_state.current_colormap = colormap
+            st.session_state.current_mantra_idx = mantra_idx
     else:
-        st.info("🔒 Controls are locked to prevent accidental changes.")
+        st.info("🔒 Controls are locked to prevent accidental changes. Click unlock to modify parameters.")
+    
+    # Show current mantra info
+    if st.session_state.current_fractal is not None:
+        devanagari, transliteration, meaning = SANSKRIT_MANTRAS[st.session_state.current_mantra_idx]
+        st.markdown(f"**Current Mantra:** {devanagari} ({transliteration}) - *{meaning}*")
 
 with tab2:
     st.header("Audio Synthesis")
