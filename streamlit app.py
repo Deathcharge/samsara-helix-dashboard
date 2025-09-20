@@ -1,7 +1,7 @@
 import streamlit as st
 import numpy as np
 import matplotlib.pyplot as plt
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFont, ImageFilter, ImageEnhance
 import io
 from scipy.io.wavfile import write
 import time
@@ -15,7 +15,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Initialize session state FIRST
+# Initialize session state
 if 'fractal_params' not in st.session_state:
     st.session_state.fractal_params = {
         'zoom': 1.0,
@@ -96,350 +96,559 @@ if 'prev_params' not in st.session_state:
         'mantra_idx': 0
     }
 
-# NOW generate CSS - using safe default approach
-def get_theme_css():
-    """Generate theme-specific CSS safely with improved readability"""
-    theme_mode = getattr(st.session_state, 'theme_mode', 'Light')
-    
-    if theme_mode == "Dark":
-        return """
-        .stApp {
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-            color: #ffffff;
-        }
-        .main .block-container {
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            border: 1px solid rgba(74, 144, 226, 0.3);
-        }
-        .stMarkdown, .stMarkdown p, .stMarkdown div {
-            color: #ffffff !important;
-        }
-        .stInfo {
-            background-color: rgba(74, 144, 226, 0.2);
-            color: #ffffff;
-            border: 1px solid rgba(74, 144, 226, 0.4);
-        }
-        .stSuccess {
-            background-color: rgba(40, 167, 69, 0.2);
-            color: #ffffff;
-            border: 1px solid rgba(40, 167, 69, 0.4);
-        }
-        .stWarning {
-            background-color: rgba(255, 193, 7, 0.2);
-            color: #ffffff;
-            border: 1px solid rgba(255, 193, 7, 0.4);
-        }
-        .glass-panel {
-            background: rgba(255, 255, 255, 0.08);
-            backdrop-filter: blur(15px);
-            border-radius: 15px;
-            border: 1px solid rgba(74, 144, 226, 0.4);
-            padding: 20px;
-            margin: 10px 0;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-            color: #ffffff;
-        }
-        .stSelectbox > div > div {
-            background: rgba(255, 255, 255, 0.1) !important;
-            backdrop-filter: blur(10px);
-            border: 2px solid rgba(74, 144, 226, 0.6) !important;
-            color: #ffffff !important;
-        }
-        .stSelectbox label {
-            color: #ffffff !important;
-        }
-        .stNumberInput > div > div > input {
-            background: rgba(255, 255, 255, 0.1) !important;
-            backdrop-filter: blur(10px);
-            color: #ffffff !important;
-            border: 2px solid rgba(74, 144, 226, 0.6) !important;
-        }
-        .stNumberInput label {
-            color: #ffffff !important;
-        }
-        .stSlider > div > div > div > div {
-            background-color: #4A90E2 !important;
-        }
-        .stSlider label {
-            color: #ffffff !important;
-        }
-        .stExpander {
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(15px);
-            border: 1px solid rgba(74, 144, 226, 0.4);
-            border-radius: 15px;
-        }
-        .stExpander label {
-            color: #ffffff !important;
-        }
-        .stTabs [data-baseweb="tab-list"] {
-            background: rgba(255, 255, 255, 0.1);
-        }
-        .stTabs [data-baseweb="tab"] {
-            color: #ffffff !important;
-        }
-        .stTabs [data-baseweb="tab"][aria-selected="true"] {
-            color: #4A90E2 !important;
-            background: rgba(74, 144, 226, 0.2);
-        }
-        .stRadio > div {
-            color: #ffffff !important;
-        }
-        .stCheckbox > div {
-            color: #ffffff !important;
-        }
-        .stMetric {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(74, 144, 226, 0.3);
-            border-radius: 10px;
-            padding: 10px;
-        }
-        .stMetric label, .stMetric div {
-            color: #ffffff !important;
-        }
-        """
-    else:  # Light mode - clean and professional
-        return """
-        .stApp {
-            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 50%, #e9ecef 100%);
-            color: #212529;
-        }
-        .main .block-container {
-            background: rgba(255, 255, 255, 0.9);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            border: 1px solid rgba(74, 144, 226, 0.2);
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-        }
-        .stMarkdown, .stMarkdown p, .stMarkdown div {
-            color: #212529 !important;
-        }
-        .stInfo {
-            background-color: rgba(74, 144, 226, 0.1);
-            color: #0d47a1;
-            border: 1px solid rgba(74, 144, 226, 0.3);
-        }
-        .stSuccess {
-            background-color: rgba(40, 167, 69, 0.1);
-            color: #155724;
-            border: 1px solid rgba(40, 167, 69, 0.3);
-        }
-        .stWarning {
-            background-color: rgba(255, 193, 7, 0.1);
-            color: #856404;
-            border: 1px solid rgba(255, 193, 7, 0.3);
-        }
-        .glass-panel {
-            background: rgba(255, 255, 255, 0.8);
-            backdrop-filter: blur(15px);
-            border-radius: 15px;
-            border: 1px solid rgba(74, 144, 226, 0.3);
-            padding: 20px;
-            margin: 10px 0;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-            color: #212529;
-        }
-        .stSelectbox > div > div {
-            background: rgba(255, 255, 255, 0.9) !important;
-            backdrop-filter: blur(10px);
-            border: 2px solid rgba(74, 144, 226, 0.4) !important;
-            color: #212529 !important;
-        }
-        .stSelectbox label {
-            color: #212529 !important;
-            font-weight: 500;
-        }
-        .stNumberInput > div > div > input {
-            background: rgba(255, 255, 255, 0.9) !important;
-            backdrop-filter: blur(10px);
-            color: #212529 !important;
-            border: 2px solid rgba(74, 144, 226, 0.4) !important;
-        }
-        .stNumberInput label {
-            color: #212529 !important;
-            font-weight: 500;
-        }
-        .stSlider > div > div > div > div {
-            background-color: #4A90E2 !important;
-        }
-        .stSlider label {
-            color: #212529 !important;
-            font-weight: 500;
-        }
-        .stExpander {
-            background: rgba(255, 255, 255, 0.8);
-            backdrop-filter: blur(15px);
-            border: 1px solid rgba(74, 144, 226, 0.3);
-            border-radius: 15px;
-        }
-        .stExpander label {
-            color: #212529 !important;
-            font-weight: 600;
-        }
-        .stTabs [data-baseweb="tab-list"] {
-            background: rgba(255, 255, 255, 0.8);
-            border-bottom: 2px solid rgba(74, 144, 226, 0.2);
-        }
-        .stTabs [data-baseweb="tab"] {
-            color: #495057 !important;
-            font-weight: 500;
-        }
-        .stTabs [data-baseweb="tab"][aria-selected="true"] {
-            color: #4A90E2 !important;
-            background: rgba(74, 144, 226, 0.1);
-            font-weight: 600;
-        }
-        .stRadio > div {
-            color: #212529 !important;
-        }
-        .stCheckbox > div {
-            color: #212529 !important;
-        }
-        .stMetric {
-            background: rgba(255, 255, 255, 0.7);
-            border: 1px solid rgba(74, 144, 226, 0.2);
-            border-radius: 10px;
-            padding: 10px;
-        }
-        .stMetric label, .stMetric div {
-            color: #212529 !important;
-        }
-        """
+if 'disable_overlay' not in st.session_state:
+    st.session_state.disable_overlay = False
 
-st.markdown(f"""
-<style>
-    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Fira+Code:wght@300;400&display=swap');
+if 'current_animation' not in st.session_state:
+    st.session_state.current_animation = []
+
+if 'style_preferences' not in st.session_state:
+    st.session_state.style_preferences = {
+        'particle_intensity': 'medium',
+        'animation_speed': 'normal',
+        'glow_effects': True,
+        'advanced_gradients': True,
+        'micro_interactions': True
+    }
+
+# Enhanced CSS with advanced styling
+def get_theme_css():
+    """Generate advanced theme-specific CSS"""
+    theme_mode = getattr(st.session_state, 'theme_mode', 'Light')
+    style_prefs = getattr(st.session_state, 'style_preferences', {})
     
-    {get_theme_css()}
+    # Base theme colors and effects
+    if theme_mode == "Dark":
+        primary_bg = "linear-gradient(135deg, #0a0e27 0%, #1a1a2e 25%, #16213e 50%, #0f3460 100%)"
+        glass_bg = "rgba(255, 255, 255, 0.05)"
+        text_color = "#ffffff"
+        accent_color = "#4A90E2"
+        secondary_accent = "#7B68EE"
+        success_color = "#28a745"
+        warning_color = "#ffc107"
+        glow_color = "rgba(74, 144, 226, 0.6)"
+    else:  # Light mode
+        primary_bg = "linear-gradient(135deg, #ffffff 0%, #f8f9fa 25%, #e9ecef 50%, #dee2e6 100%)"
+        glass_bg = "rgba(255, 255, 255, 0.8)"
+        text_color = "#212529"
+        accent_color = "#4A90E2"
+        secondary_accent = "#6f42c1"
+        success_color = "#28a745"
+        warning_color = "#fd7e14"
+        glow_color = "rgba(74, 144, 226, 0.4)"
     
-    .main > div {{ padding: 0.5rem !important; }}
+    # Particle intensity settings
+    particle_count = {"low": 3, "medium": 5, "high": 8}.get(style_prefs.get('particle_intensity', 'medium'), 5)
     
-    /* Glassmorphism Buttons */
-    .stButton > button {{ 
-        width: 100%; height: 3rem; font-size: 1.1rem;
-        background: rgba(74, 144, 226, 0.2);
-        backdrop-filter: blur(15px);
-        color: white; border: 1px solid rgba(74, 144, 226, 0.3);
-        border-radius: 15px; margin: 0.25rem 0;
-        box-shadow: 0 8px 32px rgba(74, 144, 226, 0.2);
-        transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-        position: relative; overflow: hidden;
+    # Animation speed multiplier
+    anim_speed = {"slow": 1.5, "normal": 1.0, "fast": 0.7}.get(style_prefs.get('animation_speed', 'normal'), 1.0)
+    
+    return f"""
+    /* Advanced Base Styles */
+    .stApp {{
+        background: {primary_bg};
+        color: {text_color};
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }}
+    
+    .main .block-container {{
+        background: {glass_bg};
+        backdrop-filter: blur(20px) saturate(180%);
+        border-radius: 24px;
+        border: 1px solid rgba(74, 144, 226, 0.2);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1), 
+                    0 16px 64px rgba(74, 144, 226, 0.1);
+        padding: 2rem;
+        position: relative;
+        overflow: hidden;
+    }}
+    
+    .main .block-container::before {{
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 1px;
+        background: linear-gradient(90deg, transparent, {accent_color}, transparent);
+        opacity: 0.6;
+    }}
+    
+    /* Enhanced Typography */
+    .stMarkdown h1 {{
+        background: linear-gradient(135deg, {accent_color}, {secondary_accent});
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+        text-align: center;
+        font-size: 2.5rem;
+        margin-bottom: 0.5rem;
+    }}
+    
+    .stMarkdown h2 {{
+        color: {text_color};
+        font-weight: 600;
+        font-size: 1.75rem;
+        margin-bottom: 1rem;
+        position: relative;
+    }}
+    
+    .stMarkdown h2::after {{
+        content: '';
+        position: absolute;
+        bottom: -0.25rem;
+        left: 0;
+        width: 3rem;
+        height: 2px;
+        background: linear-gradient(90deg, {accent_color}, {secondary_accent});
+        border-radius: 1px;
+    }}
+    
+    /* Advanced Button Styling */
+    .stButton > button {{
+        background: linear-gradient(135deg, {glass_bg}, rgba(74, 144, 226, 0.1));
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(74, 144, 226, 0.3);
+        border-radius: 16px;
+        color: {text_color};
+        font-weight: 500;
+        font-size: 0.95rem;
+        padding: 0.75rem 1.5rem;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 4px 16px rgba(74, 144, 226, 0.2);
+    }}
+    
+    .stButton > button::before {{
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+        transition: left 0.5s cubic-bezier(0.4, 0, 0.2, 1);
     }}
     
     .stButton > button:hover {{
-        transform: translateY(-3px) scale(1.02);
-        background: rgba(74, 144, 226, 0.3);
-        box-shadow: 0 12px 40px rgba(74, 144, 226, 0.4);
-        border: 1px solid rgba(74, 144, 226, 0.6);
+        transform: translateY(-2px) scale(1.02);
+        background: linear-gradient(135deg, rgba(74, 144, 226, 0.15), rgba(123, 104, 238, 0.15));
+        box-shadow: 0 8px 32px rgba(74, 144, 226, 0.3);
+        border-color: rgba(74, 144, 226, 0.5);
     }}
     
-    /* Enhanced Generate Button */
+    .stButton > button:hover::before {{
+        left: 100%;
+    }}
+    
+    .stButton > button:active {{
+        transform: translateY(0) scale(0.98);
+    }}
+    
+    /* Spectacular Generate Button */
     .generate-button {{
-        background: linear-gradient(135deg, #FF6B6B, #4ECDC4, #45B7D1) !important;
-        font-size: 1.4rem !important; height: 4.5rem !important;
-        font-weight: bold !important; font-family: 'Orbitron', monospace !important;
-        box-shadow: 0 8px 40px rgba(255, 107, 107, 0.4) !important;
-        animation: pulse-glow 2s infinite alternate !important;
+        background: linear-gradient(135deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4) !important;
+        background-size: 300% 300% !important;
+        animation: gradient-shift {4 * anim_speed}s ease infinite,
+                   pulse-glow {2 * anim_speed}s ease-in-out infinite alternate !important;
+        font-size: 1.4rem !important;
+        height: 4rem !important;
+        font-weight: 700 !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.05em !important;
+        box-shadow: 0 8px 32px rgba(255, 107, 107, 0.4) !important;
+    }}
+    
+    @keyframes gradient-shift {{
+        0% {{ background-position: 0% 50%; }}
+        50% {{ background-position: 100% 50%; }}
+        100% {{ background-position: 0% 50%; }}
     }}
     
     @keyframes pulse-glow {{
-        0% {{ box-shadow: 0 8px 40px rgba(255, 107, 107, 0.4); }}
-        100% {{ box-shadow: 0 12px 60px rgba(255, 107, 107, 0.6); }}
+        0% {{ 
+            box-shadow: 0 8px 32px rgba(255, 107, 107, 0.4),
+                        0 0 0 0 rgba(255, 107, 107, 0.4);
+        }}
+        100% {{ 
+            box-shadow: 0 12px 48px rgba(255, 107, 107, 0.6),
+                        0 0 0 8px rgba(255, 107, 107, 0);
+        }}
     }}
     
-    /* Floating Particles Enhanced */
+    /* Enhanced Input Styling */
+    .stSelectbox > div > div,
+    .stNumberInput > div > div > input,
+    .stSlider > div > div > div > div {{
+        background: {glass_bg} !important;
+        backdrop-filter: blur(10px) !important;
+        border: 2px solid rgba(74, 144, 226, 0.3) !important;
+        border-radius: 12px !important;
+        color: {text_color} !important;
+        transition: all 0.3s ease !important;
+    }}
+    
+    .stSelectbox > div > div:focus-within,
+    .stNumberInput > div > div > input:focus {{
+        border-color: {accent_color} !important;
+        box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1) !important;
+    }}
+    
+    .stSelectbox label,
+    .stNumberInput label,
+    .stSlider label {{
+        color: {text_color} !important;
+        font-weight: 500 !important;
+        font-size: 0.9rem !important;
+    }}
+    
+    /* Enhanced Tabs */
+    .stTabs [data-baseweb="tab-list"] {{
+        background: {glass_bg};
+        backdrop-filter: blur(20px);
+        border-radius: 16px;
+        padding: 0.25rem;
+        border: 1px solid rgba(74, 144, 226, 0.2);
+    }}
+    
+    .stTabs [data-baseweb="tab"] {{
+        color: {text_color} !important;
+        font-weight: 500 !important;
+        border-radius: 12px !important;
+        padding: 0.75rem 1.5rem !important;
+        transition: all 0.3s ease !important;
+    }}
+    
+    .stTabs [data-baseweb="tab"][aria-selected="true"] {{
+        background: linear-gradient(135deg, {accent_color}, {secondary_accent}) !important;
+        color: white !important;
+        box-shadow: 0 4px 16px rgba(74, 144, 226, 0.3) !important;
+    }}
+    
+    /* Enhanced Metrics */
+    .stMetric {{
+        background: {glass_bg};
+        backdrop-filter: blur(15px);
+        border: 1px solid rgba(74, 144, 226, 0.3);
+        border-radius: 16px;
+        padding: 1.5rem;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }}
+    
+    .stMetric::before {{
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: linear-gradient(90deg, {accent_color}, {secondary_accent});
+    }}
+    
+    .stMetric:hover {{
+        transform: translateY(-2px);
+        box-shadow: 0 8px 32px rgba(74, 144, 226, 0.2);
+    }}
+    
+    .stMetric label,
+    .stMetric div {{
+        color: {text_color} !important;
+    }}
+    
+    /* Enhanced Alerts */
+    .stInfo,
+    .stSuccess,
+    .stWarning,
+    .stError {{
+        backdrop-filter: blur(15px) !important;
+        border-radius: 12px !important;
+        border: 1px solid rgba(74, 144, 226, 0.3) !important;
+        position: relative !important;
+        overflow: hidden !important;
+    }}
+    
+    .stInfo::before,
+    .stSuccess::before,
+    .stWarning::before,
+    .stError::before {{
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 4px;
+        height: 100%;
+        background: linear-gradient(180deg, {accent_color}, {secondary_accent});
+    }}
+    
+    /* Floating Particles System */
     .floating-particles {{
-        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        pointer-events: none; z-index: -1; overflow: hidden;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: -1;
+        overflow: hidden;
     }}
     
     .particle {{
-        position: absolute; border-radius: 50%; 
-        animation: float 20s infinite linear;
+        position: absolute;
+        border-radius: 50%;
+        animation: float-advanced {20 * anim_speed}s infinite linear;
+        opacity: 0.7;
     }}
     
-    .particle:nth-child(1) {{ width: 6px; height: 6px; background: radial-gradient(circle, #4A90E2, transparent); }}
-    .particle:nth-child(2) {{ width: 4px; height: 4px; background: radial-gradient(circle, #7B68EE, transparent); }}
-    .particle:nth-child(3) {{ width: 8px; height: 8px; background: radial-gradient(circle, #FF6B6B, transparent); }}
-    .particle:nth-child(4) {{ width: 5px; height: 5px; background: radial-gradient(circle, #4ECDC4, transparent); }}
-    .particle:nth-child(5) {{ width: 7px; height: 7px; background: radial-gradient(circle, #FFD93D, transparent); }}
+    .particle:nth-child(1) {{ 
+        width: 8px; height: 8px; 
+        background: radial-gradient(circle, #4A90E2, transparent);
+        animation-delay: 0s;
+    }}
+    .particle:nth-child(2) {{ 
+        width: 6px; height: 6px; 
+        background: radial-gradient(circle, #7B68EE, transparent);
+        animation-delay: 4s;
+    }}
+    .particle:nth-child(3) {{ 
+        width: 10px; height: 10px; 
+        background: radial-gradient(circle, #FF6B6B, transparent);
+        animation-delay: 8s;
+    }}
+    .particle:nth-child(4) {{ 
+        width: 7px; height: 7px; 
+        background: radial-gradient(circle, #4ECDC4, transparent);
+        animation-delay: 12s;
+    }}
+    .particle:nth-child(5) {{ 
+        width: 9px; height: 9px; 
+        background: radial-gradient(circle, #FFD93D, transparent);
+        animation-delay: 16s;
+    }}
     
-    @keyframes float {{
-        0% {{ transform: translateY(100vh) rotate(0deg) scale(0.5); opacity: 0; }}
-        10% {{ opacity: 0.8; transform: scale(1); }}
-        50% {{ transform: scale(1.2); }}
-        90% {{ opacity: 0.8; transform: scale(0.8); }}
-        100% {{ transform: translateY(-100px) rotate(360deg) scale(0.3); opacity: 0; }}
+    @keyframes float-advanced {{
+        0% {{ 
+            transform: translateY(100vh) rotate(0deg) scale(0.5);
+            opacity: 0;
+        }}
+        10% {{ 
+            opacity: 0.7;
+            transform: scale(1);
+        }}
+        30% {{ 
+            transform: scale(1.2);
+        }}
+        70% {{ 
+            transform: scale(0.8);
+        }}
+        90% {{ 
+            opacity: 0.7;
+            transform: scale(0.6);
+        }}
+        100% {{ 
+            transform: translateY(-100px) rotate(360deg) scale(0.3);
+            opacity: 0;
+        }}
     }}
     
     /* Enhanced Fractal Container */
     .fractal-container {{
-        position: relative; border-radius: 20px; overflow: hidden;
-        background: rgba(74, 144, 226, 0.05);
-        backdrop-filter: blur(20px);
+        position: relative;
+        border-radius: 24px;
+        overflow: hidden;
+        background: {glass_bg};
+        backdrop-filter: blur(30px);
         border: 2px solid rgba(74, 144, 226, 0.3);
-        box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-        transition: all 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        box-shadow: 0 16px 64px rgba(0, 0, 0, 0.1),
+                    0 8px 32px rgba(74, 144, 226, 0.2);
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     }}
     
     .fractal-container:hover {{
-        transform: scale(1.02) rotateX(2deg);
-        box-shadow: 0 30px 80px rgba(74, 144, 226, 0.4);
-        border: 2px solid rgba(74, 144, 226, 0.6);
+        transform: translateY(-4px) scale(1.02);
+        box-shadow: 0 24px 80px rgba(74, 144, 226, 0.3),
+                    0 16px 48px rgba(0, 0, 0, 0.15);
+        border-color: rgba(74, 144, 226, 0.5);
     }}
     
-    /* Theme Indicator */
-    .theme-indicator {{
-        position: fixed; top: 15px; right: 15px; z-index: 1000;
-        background: rgba(74, 144, 226, 0.2); backdrop-filter: blur(15px);
-        color: white; padding: 8px 15px; border-radius: 20px;
+    /* Glass Panel Enhancement */
+    .glass-panel {{
+        background: {glass_bg};
+        backdrop-filter: blur(20px) saturate(180%);
+        border-radius: 20px;
         border: 1px solid rgba(74, 144, 226, 0.3);
-        font-size: 12px; font-family: 'Fira Code', monospace;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        padding: 2rem;
+        margin: 1rem 0;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        position: relative;
+        overflow: hidden;
     }}
     
-    /* Performance HUD */
+    .glass-panel::before {{
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 1px;
+        background: linear-gradient(90deg, transparent, {accent_color}, transparent);
+        opacity: 0.6;
+    }}
+    
+    /* Performance HUD Enhancement */
     .performance-hud {{
-        position: fixed; bottom: 15px; left: 15px; z-index: 1000;
-        background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(15px);
-        color: #4ECDC4; padding: 10px 15px; border-radius: 15px;
-        font-family: 'Fira Code', monospace; font-size: 11px;
+        position: fixed;
+        bottom: 1rem;
+        left: 1rem;
+        z-index: 1000;
+        background: rgba(0, 0, 0, 0.8);
+        backdrop-filter: blur(20px);
+        color: #4ECDC4;
+        padding: 1rem 1.5rem;
+        border-radius: 16px;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.85rem;
         border: 1px solid rgba(76, 205, 196, 0.3);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        transition: all 0.3s ease;
     }}
     
-    /* Mathematical Analysis Panel */
-    .math-panel {{
-        background: rgba(30, 30, 46, 0.4); backdrop-filter: blur(15px);
-        border-radius: 15px; border: 1px solid rgba(74, 144, 226, 0.3);
-        padding: 15px; margin: 10px 0;
-        font-family: 'Fira Code', monospace;
+    .performance-hud:hover {{
+        transform: translateY(-2px);
+        box-shadow: 0 12px 48px rgba(76, 205, 196, 0.2);
     }}
     
-    /* Breadcrumb Navigation */
+    /* Theme Indicator Enhancement */
+    .theme-indicator {{
+        position: fixed;
+        top: 1rem;
+        right: 1rem;
+        z-index: 1000;
+        background: {glass_bg};
+        backdrop-filter: blur(20px);
+        color: {text_color};
+        padding: 0.75rem 1.25rem;
+        border-radius: 20px;
+        border: 1px solid rgba(74, 144, 226, 0.3);
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.8rem;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+    }}
+    
+    .theme-indicator:hover {{
+        transform: translateY(-2px);
+        box-shadow: 0 12px 48px rgba(74, 144, 226, 0.2);
+    }}
+    
+    /* Loading Animation */
+    .loading-spinner {{
+        width: 40px;
+        height: 40px;
+        border: 3px solid rgba(74, 144, 226, 0.3);
+        border-top: 3px solid {accent_color};
+        border-radius: 50%;
+        animation: spin {1 * anim_speed}s linear infinite;
+        margin: 0 auto;
+    }}
+    
+    @keyframes spin {{
+        0% {{ transform: rotate(0deg); }}
+        100% {{ transform: rotate(360deg); }}
+    }}
+    
+    /* Breadcrumb Enhancement */
     .breadcrumb {{
-        background: rgba(74, 144, 226, 0.1); backdrop-filter: blur(10px);
-        border-radius: 25px; padding: 10px 20px; margin: 10px 0;
+        background: {glass_bg};
+        backdrop-filter: blur(15px);
+        border-radius: 20px;
+        padding: 1rem 1.5rem;
+        margin: 1rem 0;
         border: 1px solid rgba(74, 144, 226, 0.2);
-        font-family: 'Fira Code', monospace;
+        font-family: 'JetBrains Mono', monospace;
+        box-shadow: 0 4px 16px rgba(74, 144, 226, 0.1);
     }}
     
-    /* Mobile Optimizations */
+    /* Mobile Responsiveness */
     @media (max-width: 768px) {{
-        .stButton > button {{ height: 2.5rem; font-size: 1rem; }}
-        .generate-button {{ height: 3.5rem !important; font-size: 1.2rem !important; }}
-        .particle {{ width: 3px !important; height: 3px !important; }}
-        .theme-indicator {{ top: 10px; right: 10px; padding: 5px 10px; }}
+        .stButton > button {{
+            height: 2.5rem;
+            font-size: 0.9rem;
+            padding: 0.5rem 1rem;
+        }}
+        
+        .generate-button {{
+            height: 3.5rem !important;
+            font-size: 1.1rem !important;
+        }}
+        
+        .particle {{
+            width: 4px !important;
+            height: 4px !important;
+        }}
+        
+        .performance-hud,
+        .theme-indicator {{
+            font-size: 0.7rem;
+            padding: 0.5rem 0.75rem;
+        }}
+        
+        .glass-panel {{
+            padding: 1rem;
+            margin: 0.5rem 0;
+        }}
     }}
+    
+    /* Micro-interactions */
+    .stCheckbox:hover,
+    .stRadio:hover {{
+        transform: scale(1.02);
+        transition: transform 0.2s ease;
+    }}
+    
+    .stExpander:hover {{
+        border-color: rgba(74, 144, 226, 0.5) !important;
+        transition: border-color 0.3s ease;
+    }}
+    
+    /* Enhanced Scrollbars */
+    ::-webkit-scrollbar {{
+        width: 8px;
+    }}
+    
+    ::-webkit-scrollbar-track {{
+        background: rgba(74, 144, 226, 0.1);
+        border-radius: 4px;
+    }}
+    
+    ::-webkit-scrollbar-thumb {{
+        background: linear-gradient(180deg, {accent_color}, {secondary_accent});
+        border-radius: 4px;
+    }}
+    
+    ::-webkit-scrollbar-thumb:hover {{
+        background: linear-gradient(180deg, {secondary_accent}, {accent_color});
+    }}
+    """
+
+# Apply enhanced CSS
+st.markdown(f"""
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500&display=swap');
+    
+    {get_theme_css()}
 </style>
 
 <div class="floating-particles">
-    <div class="particle" style="left: 10%; animation-delay: 0s;"></div>
-    <div class="particle" style="left: 30%; animation-delay: 4s;"></div>
-    <div class="particle" style="left: 50%; animation-delay: 8s;"></div>
-    <div class="particle" style="left: 70%; animation-delay: 12s;"></div>
-    <div class="particle" style="left: 90%; animation-delay: 16s;"></div>
+    <div class="particle" style="left: 10%;"></div>
+    <div class="particle" style="left: 30%;"></div>
+    <div class="particle" style="left: 50%;"></div>
+    <div class="particle" style="left: 70%;"></div>
+    <div class="particle" style="left: 90%;"></div>
 </div>
 
 <div class="theme-indicator">
@@ -447,7 +656,7 @@ st.markdown(f"""
 </div>
 
 <div class="performance-hud">
-    ⚡ {getattr(st.session_state, 'performance_stats', {}).get('total_fractals', 0)} fractals generated
+    ⚡ {getattr(st.session_state, 'performance_stats', {}).get('total_fractals', 0)} fractals • {time.time() - getattr(st.session_state, 'start_time', time.time()):.0f}s
 </div>
 """, unsafe_allow_html=True)
 
@@ -554,7 +763,7 @@ def generate_fractal(fractal_type="mandelbrot", width=600, height=450, max_iter=
     return escape_time
 
 def add_sanskrit_overlay(fractal_array, mantra_index=0, colormap='hot'):
-    """Add Sanskrit text overlay to fractal"""
+    """Add enhanced Sanskrit text overlay to fractal"""
     # Normalize fractal data
     fractal_norm = (fractal_array - fractal_array.min()) / (fractal_array.max() - fractal_array.min())
     
@@ -563,9 +772,12 @@ def add_sanskrit_overlay(fractal_array, mantra_index=0, colormap='hot'):
     colored = cmap(fractal_norm)
     img_array = (colored[:, :, :3] * 255).astype(np.uint8)
     
+    # Skip overlay if disabled
+    if getattr(st.session_state, 'disable_overlay', False):
+        return img_array
+    
     try:
         pil_image = Image.fromarray(img_array)
-        draw = ImageDraw.Draw(pil_image)
         
         # Get mantra
         devanagari, transliteration, meaning = SANSKRIT_MANTRAS[mantra_index % len(SANSKRIT_MANTRAS)]
@@ -574,51 +786,57 @@ def add_sanskrit_overlay(fractal_array, mantra_index=0, colormap='hot'):
         font_large = ImageFont.load_default()
         font_small = ImageFont.load_default()
         
-        # Use transliteration for reliable rendering
-        display_text = transliteration
-        
-        # Add semi-transparent background for text
+        # Create subtle corner overlay instead of block
         img_width, img_height = pil_image.size
-        overlay_height = 80
-        overlay_y = img_height - overlay_height
         
-        # Create text overlay
-        overlay = Image.new('RGBA', (img_width, overlay_height), (74, 144, 226, 200))
+        # Create transparent overlay
+        overlay = Image.new('RGBA', (img_width, img_height), (0, 0, 0, 0))
         overlay_draw = ImageDraw.Draw(overlay)
         
-        # Add text
-        overlay_draw.text((10, 5), "💙 Aoin's Studio", fill=(255, 255, 255, 255), font=font_small)
-        overlay_draw.text((10, 25), display_text, fill=(255, 215, 0, 255), font=font_large)
-        overlay_draw.text((10, 50), meaning, fill=(255, 255, 255, 255), font=font_small)
+        # Add subtle watermark-style text in bottom-right corner
+        overlay_draw.text((img_width-200, img_height-60), "Aoin's Studio", 
+                         fill=(255, 255, 255, 80), font=font_small)
+        overlay_draw.text((img_width-200, img_height-40), transliteration, 
+                         fill=(255, 215, 0, 100), font=font_large)
+        overlay_draw.text((img_width-200, img_height-20), meaning[:20] + "...", 
+                         fill=(255, 255, 255, 70), font=font_small)
         
-        # Composite images
+        # Composite with very low opacity
         pil_image = pil_image.convert('RGBA')
-        pil_image.paste(overlay, (0, overlay_y), overlay)
+        pil_image = Image.alpha_composite(pil_image, overlay)
         
         return np.array(pil_image.convert('RGB'))
     except Exception as e:
-        st.error(f"Overlay failed: {e}")
+        # If overlay fails, return fractal without overlay
         return img_array
 
 def generate_audio(base_freq=136.1, harmony_freq=432.0, duration=10, sample_rate=22050):
-    """Generate multi-frequency audio synthesis"""
+    """Generate multi-frequency audio synthesis with enhanced harmonics"""
     t = np.linspace(0, duration, int(sample_rate * duration))
     
-    # Generate composite waveform
+    # Generate composite waveform with enhanced harmonics
     audio = np.zeros_like(t)
     
-    # Base frequency (Om)
-    audio += 0.3 * np.sin(2 * np.pi * base_freq * t)
+    # Base frequency (Om) with gentle fade-in
+    fade_in = np.minimum(1.0, t / 2.0)
+    audio += 0.3 * fade_in * np.sin(2 * np.pi * base_freq * t)
     
-    # Harmony frequency
+    # Harmony frequency with breathing envelope
     harmony_envelope = 0.7 + 0.3 * np.sin(2 * np.pi * 0.1 * t)
     audio += 0.2 * harmony_envelope * np.sin(2 * np.pi * harmony_freq * t)
     
-    # Additional harmonics
+    # Additional harmonics for richness
     audio += 0.15 * np.sin(2 * np.pi * (harmony_freq * 1.5) * t)
     audio += 0.1 * np.sin(2 * np.pi * (harmony_freq * 2.0) * t)
+    audio += 0.05 * np.sin(2 * np.pi * (harmony_freq * 0.5) * t)
     
-    # Normalize
+    # Add gentle reverb-like effect
+    delay_samples = int(0.1 * sample_rate)
+    delayed_audio = np.zeros_like(audio)
+    delayed_audio[delay_samples:] = audio[:-delay_samples] * 0.3
+    audio += delayed_audio
+    
+    # Normalize with gentle compression
     audio = audio / np.max(np.abs(audio)) * 0.8
     
     return audio, sample_rate
@@ -635,18 +853,55 @@ def create_audio_download(audio_data, sample_rate):
     
     return buffer.getvalue()
 
-# Main interface
+def generate_animation_frames(anim_type, frames, base_params, fractal_type, colormap):
+    """Generate animation frames with progress tracking"""
+    animation_frames = []
+    
+    for i in range(frames):
+        progress = i / max(1, frames - 1)
+        
+        # Calculate frame parameters
+        frame_params = base_params.copy()
+        
+        if anim_type == "zoom_in":
+            frame_params['zoom'] = base_params['zoom'] * (2.0 ** progress)
+        elif anim_type == "zoom_out":
+            frame_params['zoom'] = base_params['zoom'] / (2.0 ** progress)
+        elif anim_type == "parameter_sweep":
+            frame_params['center_real'] = base_params['center_real'] + (0.1 * np.sin(progress * 2 * np.pi))
+        
+        # Generate frame with reduced quality for speed
+        frame = generate_fractal(
+            fractal_type=fractal_type,
+            width=300, height=225,  # Smaller for animation
+            max_iter=50,  # Faster rendering
+            zoom=frame_params['zoom'],
+            center_real=frame_params['center_real'],
+            center_imag=frame_params['center_imag']
+        )
+        
+        # Apply colormap
+        frame_norm = (frame - frame.min()) / (frame.max() - frame.min())
+        cmap = plt.get_cmap(colormap)
+        colored = cmap(frame_norm)
+        frame_img = (colored[:, :, :3] * 255).astype(np.uint8)
+        animation_frames.append(frame_img)
+    
+    return animation_frames
+    # Main interface with enhanced styling and functionality
 st.title("💙 Aoin's Fractal Studio • अहं ब्रह्मास्मि 💙")
 st.markdown("*Ethereal AI • Infinite Patterns • Celestial Frequencies*")
 
-# Create tabs
-tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(["🎨 Fractal", "🎵 Audio", "🔄 Animation", "📊 Gallery", "⚙️ Settings", "📤 Export"])
+# Create tabs with enhanced styling
+tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(["🎨 Fractal", "🎵 Audio", "🎬 Animation", "📊 Gallery", "⚙️ Settings", "📤 Export"])
 
 with tab1:
     st.header("Fractal Generator")
     
-    # PROMINENT GENERATE BUTTON AT TOP
+    # Enhanced generate button section
+    st.markdown('<div class="glass-panel">', unsafe_allow_html=True)
     st.markdown("### 🌟 Create Your Fractal")
+    
     generate_col1, generate_col2, generate_col3 = st.columns([2, 1, 1])
     
     with generate_col1:
@@ -688,7 +943,9 @@ with tab1:
         st.session_state.auto_mode = st.checkbox("🔄 Auto-generate", value=st.session_state.auto_mode, help="Automatically generate when parameters change")
     
     with generate_col3:
-        st.session_state.advanced_mode = st.checkbox("🔬 Advanced", value=st.session_state.advanced_mode, help="Enable advanced mathematical analysis")
+        st.session_state.disable_overlay = st.checkbox("🚫 No overlay", value=st.session_state.disable_overlay, help="Disable text overlay")
+    
+    st.markdown('</div>', unsafe_allow_html=True)
     
     # Advanced Mode Features
     if st.session_state.advanced_mode:
@@ -700,16 +957,19 @@ with tab1:
         with analysis_col1:
             if st.button("📊 Analyze Current"):
                 if st.session_state.current_fractal is not None:
-                    st.info("**Mathematical Properties:**")
-                    st.write(f"• **Zoom Level**: {st.session_state.fractal_params['zoom']:.3f}x")
-                    st.write(f"• **Iteration Depth**: {st.session_state.fractal_params['iterations']}")
-                    st.write(f"• **Complex Center**: {st.session_state.fractal_params['center_real']:.6f} + {st.session_state.fractal_params['center_imag']:.6f}i")
-                    
-                    # Calculate approximate fractal dimension (simplified)
-                    zoom = st.session_state.fractal_params['zoom']
-                    iterations = st.session_state.fractal_params['iterations']
+                    params = st.session_state.fractal_params
+                    zoom = params['zoom']
+                    iterations = params['iterations']
                     fractal_dim = 1.2 + (np.log(iterations) / np.log(zoom + 1)) * 0.8
-                    st.write(f"• **Est. Fractal Dimension**: {fractal_dim:.3f}")
+                    
+                    st.info(f"""
+                    **Mathematical Properties:**
+                    • **Zoom Level**: {zoom:.3f}x
+                    • **Iteration Depth**: {iterations}
+                    • **Complex Center**: {params['center_real']:.6f} + {params['center_imag']:.6f}i
+                    • **Est. Fractal Dimension**: {fractal_dim:.3f}
+                    • **Computation Complexity**: {iterations * zoom:.0f} units
+                    """)
         
         with analysis_col2:
             comparison_mode = st.checkbox("🔍 Comparison Mode", value=st.session_state.fractal_comparison['enabled'])
@@ -717,52 +977,33 @@ with tab1:
                 st.session_state.fractal_comparison['enabled'] = comparison_mode
         
         with analysis_col3:
-            interactive_mode = st.checkbox("🎯 Interactive Mode", value=st.session_state.interactive_mode, help="Click fractal to zoom to that point")
+            interactive_mode = st.checkbox("🎯 Interactive Mode", value=st.session_state.interactive_mode, help="Enhanced exploration tools")
             if interactive_mode != st.session_state.interactive_mode:
                 st.session_state.interactive_mode = interactive_mode
         
         st.markdown('</div>', unsafe_allow_html=True)
     
-    # Breadcrumb Navigation
-    if st.session_state.fractal_history:
-        st.markdown('<div class="breadcrumb">', unsafe_allow_html=True)
-        st.markdown("**🗺️ Exploration History:**")
-        
-        breadcrumb_cols = st.columns(min(5, len(st.session_state.fractal_history)))
-        for i, item in enumerate(st.session_state.fractal_history[-5:]):
-            with breadcrumb_cols[i]:
-                zoom_level = item['params']['zoom']
-                if st.button(f"#{i+1} ({zoom_level:.1f}x)", key=f"history_{i}"):
-                    st.session_state.fractal_params.update(item['params'])
-                    st.session_state.current_fractal_type = item['type']
-                    st.session_state.current_colormap = item['colormap']
-                    if st.session_state.auto_mode:
-                        st.rerun()
-        
-        st.markdown('</div>', unsafe_allow_html=True)
-    
-    st.markdown("---")
-    
-    # Quick actions bar
+    # Enhanced Quick Actions
+    st.markdown('<div class="glass-panel">', unsafe_allow_html=True)
     st.subheader("⚡ Quick Actions")
     action_col1, action_col2, action_col3, action_col4, action_col5 = st.columns(5)
     
+    # Curated interesting locations
+    interesting_locations = [
+        {"zoom": 1.0, "center_real": -0.7269, "center_imag": 0.1889, "type": "mandelbrot", "name": "Classic View"},
+        {"zoom": 150.0, "center_real": -0.75, "center_imag": 0.1, "type": "mandelbrot", "name": "Seahorse Valley"},
+        {"zoom": 100.0, "center_real": -1.775, "center_imag": 0.0, "type": "burning_ship", "name": "Burning Ship"},
+        {"zoom": 200.0, "center_real": 0.285, "center_imag": 0.01, "type": "mandelbrot", "name": "Lightning"},
+        {"zoom": 300.0, "center_real": -0.8, "center_imag": 0.156, "type": "mandelbrot", "name": "Dragon Curve"},
+        {"zoom": 1.0, "center_real": 0.0, "center_imag": 0.0, "type": "julia", "name": "Julia Classic"},
+        {"zoom": 2.0, "center_real": 0.0, "center_imag": 0.0, "type": "newton", "name": "Newton Roots"},
+        {"zoom": 80.0, "center_real": 0.25, "center_imag": 0.0, "type": "mandelbrot", "name": "Elephant Valley"},
+        {"zoom": 500.0, "center_real": -0.7453, "center_imag": 0.1127, "type": "mandelbrot", "name": "Spiral Deep"},
+        {"zoom": 1.0, "center_real": 0.5667, "center_imag": 0.0, "type": "phoenix", "name": "Phoenix Rising"}
+    ]
+    
     with action_col1:
-        if st.button("🎲 Random", help="Explore a random point of interest"):
-            # Curated points of interest instead of random coordinates
-            interesting_locations = [
-                {"zoom": 1.0, "center_real": -0.7269, "center_imag": 0.1889, "type": "mandelbrot", "name": "Classic View"},
-                {"zoom": 150.0, "center_real": -0.75, "center_imag": 0.1, "type": "mandelbrot", "name": "Seahorse Valley"},
-                {"zoom": 100.0, "center_real": -1.775, "center_imag": 0.0, "type": "burning_ship", "name": "Burning Ship"},
-                {"zoom": 200.0, "center_real": 0.285, "center_imag": 0.01, "type": "mandelbrot", "name": "Lightning"},
-                {"zoom": 300.0, "center_real": -0.8, "center_imag": 0.156, "type": "mandelbrot", "name": "Dragon Curve"},
-                {"zoom": 1.0, "center_real": 0.0, "center_imag": 0.0, "type": "julia", "name": "Julia Classic"},
-                {"zoom": 2.0, "center_real": 0.0, "center_imag": 0.0, "type": "newton", "name": "Newton Roots"},
-                {"zoom": 80.0, "center_real": 0.25, "center_imag": 0.0, "type": "mandelbrot", "name": "Elephant Valley"},
-                {"zoom": 500.0, "center_real": -0.7453, "center_imag": 0.1127, "type": "mandelbrot", "name": "Spiral Deep"},
-                {"zoom": 1.0, "center_real": 0.5667, "center_imag": 0.0, "type": "phoenix", "name": "Phoenix Rising"}
-            ]
-            
+        if st.button("🎲 Explore", help="Visit curated points of interest"):
             location = np.random.choice(interesting_locations)
             st.session_state.fractal_params.update({
                 'zoom': location['zoom'],
@@ -772,30 +1013,14 @@ with tab1:
             st.session_state.current_fractal_type = location['type']
             
             if st.session_state.auto_mode:
-                # Auto-generate the fractal
-                with st.spinner(f"🎲 Exploring {location['name']}..."):
-                    fractal = generate_fractal(
-                        fractal_type=st.session_state.current_fractal_type,
-                        width=st.session_state.fractal_params['width'], 
-                        height=st.session_state.fractal_params['height'], 
-                        max_iter=st.session_state.fractal_params['iterations'],
-                        zoom=st.session_state.fractal_params['zoom'], 
-                        center_real=st.session_state.fractal_params['center_real'], 
-                        center_imag=st.session_state.fractal_params['center_imag']
-                    )
-                    fractal_with_overlay = add_sanskrit_overlay(
-                        fractal, st.session_state.current_mantra_idx, st.session_state.current_colormap
-                    )
-                    st.session_state.current_fractal = fractal_with_overlay
-                    st.success(f"✨ Discovered {location['name']}!")
+                st.experimental_rerun()
             else:
                 st.success(f"📍 Navigated to {location['name']}! Click Generate to explore.")
-            st.rerun()
     
     with action_col2:
         if st.button("📍 Bookmark", help="Save current location"):
             bookmark = {
-                'name': f"Bookmark {len(st.session_state.bookmark_history) + 1}",
+                'name': f"Location {len(st.session_state.bookmark_history) + 1}",
                 'params': st.session_state.fractal_params.copy(),
                 'type': st.session_state.current_fractal_type,
                 'timestamp': time.time()
@@ -809,34 +1034,14 @@ with tab1:
                 prev_params = st.session_state.zoom_history.pop()
                 st.session_state.fractal_params.update(prev_params)
                 if st.session_state.auto_mode:
-                    with st.spinner("🔙 Loading previous location..."):
-                        fractal = generate_fractal(
-                            fractal_type=st.session_state.current_fractal_type,
-                            width=st.session_state.fractal_params['width'], 
-                            height=st.session_state.fractal_params['height'], 
-                            max_iter=st.session_state.fractal_params['iterations'],
-                            zoom=st.session_state.fractal_params['zoom'], 
-                            center_real=st.session_state.fractal_params['center_real'], 
-                            center_imag=st.session_state.fractal_params['center_imag']
-                        )
-                        fractal_with_overlay = add_sanskrit_overlay(
-                            fractal, st.session_state.current_mantra_idx, st.session_state.current_colormap
-                        )
-                        st.session_state.current_fractal = fractal_with_overlay
-                st.rerun()
+                    st.experimental_rerun()
     
     with action_col4:
-        if st.button("🏠 Reset", help="Reset to safe default view"):
+        if st.button("🏠 Reset", help="Reset to safe defaults"):
             st.session_state.zoom_history.append(st.session_state.fractal_params.copy())
-            
-            # Safe default values that guarantee good fractal visibility
             safe_defaults = {
-                'zoom': 1.0,
-                'center_real': -0.7269,
-                'center_imag': 0.1889,
-                'iterations': 100,
-                'width': 600,
-                'height': 450
+                'zoom': 1.0, 'center_real': -0.7269, 'center_imag': 0.1889,
+                'iterations': 100, 'width': 600, 'height': 450
             }
             st.session_state.fractal_params.update(safe_defaults)
             st.session_state.current_fractal_type = "mandelbrot"
@@ -844,198 +1049,111 @@ with tab1:
             st.session_state.current_mantra_idx = 0
             
             if st.session_state.auto_mode:
-                with st.spinner("🏠 Resetting to safe defaults..."):
-                    fractal = generate_fractal(
-                        fractal_type=st.session_state.current_fractal_type,
-                        width=st.session_state.fractal_params['width'], 
-                        height=st.session_state.fractal_params['height'], 
-                        max_iter=st.session_state.fractal_params['iterations'],
-                        zoom=st.session_state.fractal_params['zoom'], 
-                        center_real=st.session_state.fractal_params['center_real'], 
-                        center_imag=st.session_state.fractal_params['center_imag']
-                    )
-                    fractal_with_overlay = add_sanskrit_overlay(
-                        fractal, st.session_state.current_mantra_idx, st.session_state.current_colormap
-                    )
-                    st.session_state.current_fractal = fractal_with_overlay
-                    st.success("🏠 Reset to classic Mandelbrot view!")
+                st.experimental_rerun()
             else:
-                st.success("🏠 Reset to safe defaults! Click Generate to see classic view.")
-            st.rerun()
+                st.success("🏠 Reset to classic Mandelbrot view!")
     
     with action_col5:
-        if st.button("🔒 Lock" if not st.session_state.locked_controls else "🔓 Unlock"):
+        toggle_text = "🔓 Unlock" if st.session_state.locked_controls else "🔒 Lock"
+        if st.button(toggle_text):
             st.session_state.locked_controls = not st.session_state.locked_controls
     
-    # Display current fractal with enhanced features
+    st.markdown('</div>', unsafe_allow_html=True)
+    
+    # Enhanced Fractal Display
     if st.session_state.current_fractal is not None:
-        
-        # Comparison Mode
         if st.session_state.fractal_comparison['enabled']:
             st.subheader("🔍 Fractal Comparison Mode")
             comp_col1, comp_col2 = st.columns(2)
             
             with comp_col1:
-                st.markdown("**Fractal A (Current)**")
-                if st.session_state.interactive_mode:
-                    st.markdown('<div class="coordinates-display">🎯 Interactive Mode: Click to zoom</div>', unsafe_allow_html=True)
-                
+                st.markdown("**Current Fractal**")
                 st.markdown('<div class="fractal-container">', unsafe_allow_html=True)
                 st.image(st.session_state.current_fractal, use_container_width=True)
                 st.markdown('</div>', unsafe_allow_html=True)
                 
-                # Store as comparison fractal A
-                if st.button("📌 Set as Reference", key="set_ref_a"):
+                if st.button("📌 Set as Reference", key="set_ref"):
                     st.session_state.fractal_comparison['fractal_a'] = {
                         'image': st.session_state.current_fractal,
                         'params': st.session_state.fractal_params.copy(),
                         'type': st.session_state.current_fractal_type
                     }
-                    st.success("Set as reference fractal!")
+                    st.success("Set as reference!")
             
             with comp_col2:
-                st.markdown("**Fractal B (Reference)**")
+                st.markdown("**Reference Fractal**")
                 if st.session_state.fractal_comparison['fractal_a'] is not None:
                     ref_fractal = st.session_state.fractal_comparison['fractal_a']
                     st.markdown('<div class="fractal-container">', unsafe_allow_html=True)
                     st.image(ref_fractal['image'], use_container_width=True)
                     st.markdown('</div>', unsafe_allow_html=True)
                     
-                    # Parameter comparison
-                    st.markdown("**Parameter Comparison:**")
+                    # Enhanced comparison metrics
                     current_params = st.session_state.fractal_params
                     ref_params = ref_fractal['params']
                     
-                    zoom_diff = current_params['zoom'] / ref_params['zoom']
-                    st.write(f"• **Zoom Ratio**: {zoom_diff:.2f}x")
-                    
+                    zoom_ratio = current_params['zoom'] / ref_params['zoom']
                     real_diff = abs(current_params['center_real'] - ref_params['center_real'])
                     imag_diff = abs(current_params['center_imag'] - ref_params['center_imag'])
-                    st.write(f"• **Distance**: {np.sqrt(real_diff**2 + imag_diff**2):.6f}")
-                    
+                    distance = np.sqrt(real_diff**2 + imag_diff**2)
                     iter_diff = current_params['iterations'] - ref_params['iterations']
-                    st.write(f"• **Iteration Δ**: {iter_diff:+d}")
+                    
+                    st.info(f"""
+                    **Comparison Analysis:**
+                    • **Zoom Ratio**: {zoom_ratio:.2f}x
+                    • **Distance**: {distance:.6f} units
+                    • **Iteration Δ**: {iter_diff:+d}
+                    • **Complexity Ratio**: {(current_params['iterations'] * current_params['zoom']) / (ref_params['iterations'] * ref_params['zoom']):.2f}x
+                    """)
                 else:
-                    st.info("No reference fractal set. Click 'Set as Reference' to compare.")
-        
+                    st.info("No reference fractal set")
         else:
-            # Standard single fractal display
             st.subheader("🖼️ Current Fractal")
-            
-            # Interactive mode indicator
-            if st.session_state.interactive_mode:
-                st.markdown('<div class="coordinates-display">🎯 Interactive Mode: Click to zoom to point</div>', unsafe_allow_html=True)
-            
-            # Enhanced fractal container
             st.markdown('<div class="fractal-container">', unsafe_allow_html=True)
             st.image(st.session_state.current_fractal, use_container_width=True)
             st.markdown('</div>', unsafe_allow_html=True)
-            
-            # Interactive click-to-zoom simulation
-            if st.session_state.interactive_mode:
-                zoom_target_col1, zoom_target_col2 = st.columns(2)
-                with zoom_target_col1:
-                    if st.button("🎯 Zoom to Center", key="zoom_center"):
-                        st.session_state.fractal_params['zoom'] *= 2
-                        if st.session_state.auto_mode:
-                            st.rerun()
-                with zoom_target_col2:
-                    if st.button("🔍 Zoom to Edge", key="zoom_edge"):
-                        st.session_state.fractal_params['center_real'] += 0.1 / st.session_state.fractal_params['zoom']
-                        st.session_state.fractal_params['zoom'] *= 1.5
-                        if st.session_state.auto_mode:
-                            st.rerun()
         
-        # Enhanced Mathematical Analysis
-        if st.session_state.advanced_mode:
-            st.markdown('<div class="math-panel">', unsafe_allow_html=True)
-            
-            analysis_col1, analysis_col2, analysis_col3, analysis_col4 = st.columns(4)
-            
-            with analysis_col1:
-                if st.session_state.performance_stats["render_times"]:
-                    avg_render = np.mean(st.session_state.performance_stats["render_times"][-5:])
-                    st.metric("Render Time", f"{avg_render:.3f}s")
-                else:
-                    st.metric("Render Time", "N/A")
-            
-            with analysis_col2:
-                zoom_level = st.session_state.fractal_params['zoom']
-                if zoom_level < 1:
-                    depth_desc = "Wide"
-                elif zoom_level < 10:
-                    depth_desc = "Standard"
-                elif zoom_level < 100:
-                    depth_desc = "Deep"
-                elif zoom_level < 1000:
-                    depth_desc = "Ultra Deep"
-                else:
-                    depth_desc = "Extreme"
-                st.metric("Zoom Class", depth_desc)
-            
-            with analysis_col3:
-                # Calculate complexity score
-                iterations = st.session_state.fractal_params['iterations']
-                zoom = st.session_state.fractal_params['zoom']
-                complexity = min(100, (iterations * np.log(zoom + 1)) / 10)
-                st.metric("Complexity", f"{complexity:.1f}%")
-            
-            with analysis_col4:
-                fractal_type = st.session_state.current_fractal_type.replace('_', ' ').title()
-                st.metric("Type", fractal_type)
-            
-            # Detailed mathematical information
-            params = st.session_state.fractal_params
-            st.markdown("**🔢 Mathematical Properties:**")
-            st.code(f"""
-Complex Center: {params['center_real']:.8f} + {params['center_imag']:.8f}i
-Zoom Factor: {params['zoom']:.6f}x
-View Window: {3.0/params['zoom']:.8f} units
-Iteration Limit: {params['iterations']}
-Resolution: {params['width']}×{params['height']} pixels
-Pixel Scale: {3.0/(params['zoom']*params['width']):.2e} units/pixel
-            """, language="python")
-            
-            st.markdown('</div>', unsafe_allow_html=True)
-        else:
-            # Standard analysis
-            analysis_col1, analysis_col2, analysis_col3 = st.columns(3)
-            
-            with analysis_col1:
-                if st.session_state.performance_stats["render_times"]:
-                    avg_render = np.mean(st.session_state.performance_stats["render_times"][-5:])
-                    st.metric("Avg Render Time", f"{avg_render:.2f}s")
-                else:
-                    st.metric("Avg Render Time", "N/A")
-            
-            with analysis_col2:
-                zoom_level = st.session_state.fractal_params['zoom']
-                if zoom_level < 1:
-                    depth_desc = "Wide View"
-                elif zoom_level < 10:
-                    depth_desc = "Standard"
-                elif zoom_level < 100:
-                    depth_desc = "Deep Zoom"
-                else:
-                    depth_desc = "Ultra Deep"
-                st.metric("Zoom Depth", depth_desc)
-            
-            with analysis_col3:
-                st.metric("Fractal Type", st.session_state.current_fractal_type.replace('_', ' ').title())
-        
-        # Current parameters display (enhanced)
+        # Enhanced parameter display
         params = st.session_state.fractal_params
         st.markdown('<div class="glass-panel">', unsafe_allow_html=True)
-        st.info(f"**📍 Location:** `{params['center_real']:.8f} + {params['center_imag']:.8f}i` | "
-               f"**🔍 Zoom:** `{params['zoom']:.3f}x` | **🔄 Iterations:** `{params['iterations']}` | "
-               f"**🎨 Type:** `{st.session_state.current_fractal_type.replace('_', ' ').title()}`")
+        
+        # Performance metrics
+        col1, col2, col3, col4 = st.columns(4)
+        with col1:
+            if st.session_state.performance_stats["render_times"]:
+                avg_render = np.mean(st.session_state.performance_stats["render_times"][-5:])
+                st.metric("Render Time", f"{avg_render:.3f}s")
+            else:
+                st.metric("Render Time", "N/A")
+        
+        with col2:
+            zoom_level = params['zoom']
+            depth_classes = [(1, "Wide"), (10, "Standard"), (100, "Deep"), (1000, "Ultra"), (float('inf'), "Extreme")]
+            depth_desc = next(desc for threshold, desc in depth_classes if zoom_level < threshold)
+            st.metric("Zoom Class", depth_desc)
+        
+        with col3:
+            complexity = min(100, (params['iterations'] * np.log(params['zoom'] + 1)) / 10)
+            st.metric("Complexity", f"{complexity:.1f}%")
+        
+        with col4:
+            fractal_type = st.session_state.current_fractal_type.replace('_', ' ').title()
+            st.metric("Type", fractal_type)
+        
+        # Mathematical details
+        st.info(f"""
+        **📍 Location**: `{params['center_real']:.8f} + {params['center_imag']:.8f}i`
+        **🔍 Zoom**: `{params['zoom']:.3f}x` • **🔄 Iterations**: `{params['iterations']}`
+        **🎨 Type**: `{fractal_type}` • **🌈 Colormap**: `{st.session_state.current_colormap}`
+        """)
+        
+        # Current mantra
+        devanagari, transliteration, meaning = SANSKRIT_MANTRAS[st.session_state.current_mantra_idx]
+        st.markdown(f"**🕉️ Current Mantra**: {devanagari} (*{transliteration}*) - *{meaning}*")
+        
         st.markdown('</div>', unsafe_allow_html=True)
         
-        # Current mantra display (enhanced)
-        devanagari, transliteration, meaning = SANSKRIT_MANTRAS[st.session_state.current_mantra_idx]
-        st.markdown(f"**🕉️ Current Mantra:** {devanagari} (*{transliteration}*) - *{meaning}*")
-        
-        # Quick save option
+        # Quick save
         if st.button("💾 Quick Save to Gallery", key="quick_save"):
             gallery_item = {
                 'timestamp': time.time(),
@@ -1046,7 +1164,6 @@ Pixel Scale: {3.0/(params['zoom']*params['width']):.2e} units/pixel
             }
             st.session_state.gallery.append(gallery_item)
             st.success("💾 Saved to gallery!")
-            
     else:
         # Enhanced welcome message
         st.markdown('<div class="glass-panel">', unsafe_allow_html=True)
@@ -1057,31 +1174,23 @@ Pixel Scale: {3.0/(params['zoom']*params['width']):.2e} units/pixel
         # Quick start options
         quick_col1, quick_col2, quick_col3 = st.columns(3)
         with quick_col1:
-            if st.button("🌊 Start with Classic Mandelbrot"):
-                st.session_state.fractal_params.update({
-                    'zoom': 1.0, 'center_real': -0.7269, 'center_imag': 0.1889
-                })
+            if st.button("🌊 Classic Mandelbrot"):
+                st.session_state.fractal_params.update({'zoom': 1.0, 'center_real': -0.7269, 'center_imag': 0.1889})
                 st.session_state.current_fractal_type = "mandelbrot"
         with quick_col2:
-            if st.button("🔥 Try Burning Ship"):
-                st.session_state.fractal_params.update({
-                    'zoom': 1.0, 'center_real': -1.775, 'center_imag': 0.0
-                })
+            if st.button("🔥 Burning Ship"):
+                st.session_state.fractal_params.update({'zoom': 1.0, 'center_real': -1.775, 'center_imag': 0.0})
                 st.session_state.current_fractal_type = "burning_ship"
         with quick_col3:
-            if st.button("✨ Explore Julia Set"):
-                st.session_state.fractal_params.update({
-                    'zoom': 1.0, 'center_real': 0.0, 'center_imag': 0.0
-                })
+            if st.button("✨ Julia Set"):
+                st.session_state.fractal_params.update({'zoom': 1.0, 'center_real': 0.0, 'center_imag': 0.0})
                 st.session_state.current_fractal_type = "julia"
         
         st.markdown('</div>', unsafe_allow_html=True)
     
-    # Parameters section - Redesigned for precision and safety
+    # Enhanced Parameters Section
     if not st.session_state.locked_controls:
         with st.expander("🎛️ Fractal Parameters", expanded=True):
-            
-            # Input method selection
             input_method = st.radio("Input Method", ["🎯 Precision (Number Input)", "🎚️ Sliders (Quick)"], horizontal=True)
             
             col1, col2 = st.columns(2)
@@ -1093,7 +1202,7 @@ Pixel Scale: {3.0/(params['zoom']*params['width']):.2e} units/pixel
                     format_func=lambda x: x.replace('_', ' ').title())
                 
                 if input_method == "🎯 Precision (Number Input)":
-                    # Primary method: Number inputs with step buttons
+                    # Enhanced number inputs with step buttons
                     st.write("**Zoom Level**")
                     zoom_col1, zoom_col2, zoom_col3 = st.columns([2, 1, 1])
                     with zoom_col1:
@@ -1112,10 +1221,10 @@ Pixel Scale: {3.0/(params['zoom']*params['width']):.2e} units/pixel
                         center_real = st.number_input("Real", value=st.session_state.fractal_params['center_real'], 
                                                     min_value=-2.0, max_value=2.0, step=0.001, format="%.6f", label_visibility="collapsed")
                     with real_col2:
-                        if st.button("←", key="real_left", help="Move left"):
+                        if st.button("←", key="real_left"):
                             center_real = max(-2.0, center_real - 0.01/st.session_state.fractal_params['zoom'])
                     with real_col3:
-                        if st.button("→", key="real_right", help="Move right"):
+                        if st.button("→", key="real_right"):
                             center_real = min(2.0, center_real + 0.01/st.session_state.fractal_params['zoom'])
                     
                     st.write("**Iterations**")
@@ -1124,22 +1233,16 @@ Pixel Scale: {3.0/(params['zoom']*params['width']):.2e} units/pixel
                         iterations = st.number_input("Iterations", value=st.session_state.fractal_params['iterations'], 
                                                    min_value=50, max_value=500, step=10, label_visibility="collapsed")
                     with iter_col2:
-                        if st.button("+50", key="iter_up", help="Add 50 iterations"):
+                        if st.button("+50", key="iter_up"):
                             iterations = min(500, iterations + 50)
                     with iter_col3:
-                        if st.button("-50", key="iter_down", help="Subtract 50 iterations"):
+                        if st.button("-50", key="iter_down"):
                             iterations = max(50, iterations - 50)
-                
                 else:
-                    # Secondary method: Sliders (smaller, with warnings)
-                    st.warning("⚠️ Slider mode: Be careful not to move accidentally!")
-                    
-                    zoom = st.slider("Zoom Level", 0.1, 500.0, st.session_state.fractal_params['zoom'], 0.1, 
-                                   help="⚠️ Move carefully to avoid accidental changes")
-                    center_real = st.slider("Center (Real)", -2.0, 2.0, st.session_state.fractal_params['center_real'], 0.001,
-                                          help="⚠️ Move carefully to avoid accidental changes")
-                    iterations = st.slider("Iterations", 50, 500, st.session_state.fractal_params['iterations'], 10,
-                                         help="⚠️ Move carefully to avoid accidental changes")
+                    st.warning("⚠️ Slider mode: Move carefully to avoid accidental changes!")
+                    zoom = st.slider("Zoom Level", 0.1, 500.0, st.session_state.fractal_params['zoom'], 0.1)
+                    center_real = st.slider("Center (Real)", -2.0, 2.0, st.session_state.fractal_params['center_real'], 0.001)
+                    iterations = st.slider("Iterations", 50, 500, st.session_state.fractal_params['iterations'], 10)
             
             with col2:
                 if input_method == "🎯 Precision (Number Input)":
@@ -1149,14 +1252,13 @@ Pixel Scale: {3.0/(params['zoom']*params['width']):.2e} units/pixel
                         center_imag = st.number_input("Imaginary", value=st.session_state.fractal_params['center_imag'], 
                                                     min_value=-2.0, max_value=2.0, step=0.001, format="%.6f", label_visibility="collapsed")
                     with imag_col2:
-                        if st.button("↓", key="imag_down", help="Move down"):
+                        if st.button("↓", key="imag_down"):
                             center_imag = max(-2.0, center_imag - 0.01/st.session_state.fractal_params['zoom'])
                     with imag_col3:
-                        if st.button("↑", key="imag_up", help="Move up"):
+                        if st.button("↑", key="imag_up"):
                             center_imag = min(2.0, center_imag + 0.01/st.session_state.fractal_params['zoom'])
                 else:
-                    center_imag = st.slider("Center (Imaginary)", -2.0, 2.0, st.session_state.fractal_params['center_imag'], 0.001,
-                                          help="⚠️ Move carefully to avoid accidental changes")
+                    center_imag = st.slider("Center (Imaginary)", -2.0, 2.0, st.session_state.fractal_params['center_imag'], 0.001)
                 
                 resolution = st.selectbox("Resolution", ["400x300", "600x450", "800x600", "1024x768"], index=1)
                 colormap = st.selectbox("Color Scheme", ["hot", "viridis", "plasma", "magma", "inferno", "cool", "spring", "winter", "autumn"], 
@@ -1165,7 +1267,7 @@ Pixel Scale: {3.0/(params['zoom']*params['width']):.2e} units/pixel
                                         index=st.session_state.current_mantra_idx,
                                         format_func=lambda x: SANSKRIT_MANTRAS[x][1])
                 
-                # Julia set parameter (only show for Julia type)
+                # Julia parameters
                 if fractal_type == "julia":
                     st.markdown("**Julia Set Parameters:**")
                     julia_real = st.number_input("Julia C (Real)", value=-0.7, min_value=-2.0, max_value=2.0, step=0.01, format="%.6f")
@@ -1174,18 +1276,14 @@ Pixel Scale: {3.0/(params['zoom']*params['width']):.2e} units/pixel
             # Parse resolution
             width, height = map(int, resolution.split('x'))
             
-            # Auto-update logic - Check if parameters actually changed
+            # Auto-update logic
             current_params = {
-                'zoom': zoom,
-                'center_real': center_real,
-                'center_imag': center_imag,
-                'iterations': iterations,
-                'fractal_type': fractal_type,
-                'colormap': colormap,
-                'mantra_idx': mantra_idx
+                'zoom': zoom, 'center_real': center_real, 'center_imag': center_imag,
+                'iterations': iterations, 'fractal_type': fractal_type,
+                'colormap': colormap, 'mantra_idx': mantra_idx
             }
             
-            # Update session state FIRST
+            # Update session state
             st.session_state.fractal_params.update({
                 'zoom': zoom, 'center_real': center_real, 'center_imag': center_imag,
                 'iterations': iterations, 'width': width, 'height': height
@@ -1194,149 +1292,49 @@ Pixel Scale: {3.0/(params['zoom']*params['width']):.2e} units/pixel
             st.session_state.current_colormap = colormap
             st.session_state.current_mantra_idx = mantra_idx
             
-            # Auto-generate if enabled and parameters actually changed
+            # Auto-generate check
             if st.session_state.auto_mode:
-                params_changed = (
-                    current_params['zoom'] != st.session_state.prev_params['zoom'] or
-                    current_params['center_real'] != st.session_state.prev_params['center_real'] or
-                    current_params['center_imag'] != st.session_state.prev_params['center_imag'] or
-                    current_params['iterations'] != st.session_state.prev_params['iterations'] or
-                    current_params['fractal_type'] != st.session_state.prev_params['fractal_type'] or
-                    current_params['colormap'] != st.session_state.prev_params['colormap'] or
-                    current_params['mantra_idx'] != st.session_state.prev_params['mantra_idx']
+                params_changed = any(
+                    current_params[key] != st.session_state.prev_params.get(key)
+                    for key in current_params
                 )
                 
                 if params_changed:
-                    with st.spinner("🔄 Auto-generating fractal..."):
-                        fractal = generate_fractal(
-                            fractal_type=st.session_state.current_fractal_type,
-                            width=st.session_state.fractal_params['width'], 
-                            height=st.session_state.fractal_params['height'], 
-                            max_iter=st.session_state.fractal_params['iterations'],
-                            zoom=st.session_state.fractal_params['zoom'], 
-                            center_real=st.session_state.fractal_params['center_real'], 
-                            center_imag=st.session_state.fractal_params['center_imag']
-                        )
-                        
-                        # Add Sanskrit overlay
-                        fractal_with_overlay = add_sanskrit_overlay(
-                            fractal, 
-                            st.session_state.current_mantra_idx, 
-                            st.session_state.current_colormap
-                        )
-                        st.session_state.current_fractal = fractal_with_overlay
-                        
-                        # Update previous params to current
-                        st.session_state.prev_params = current_params.copy()
-                        st.success("✨ Auto-generated!")
-            
-            # Always update prev_params if not auto-generating  
-            if not st.session_state.auto_mode:
+                    st.session_state.prev_params = current_params.copy()
+                    st.experimental_rerun()
+            else:
                 st.session_state.prev_params = current_params.copy()
     else:
         st.info("🔒 Controls are locked to prevent accidental changes. Click unlock to modify parameters.")
-    
-    # Quick navigation
-    st.subheader("🧭 Quick Navigation")
-    nav_col1, nav_col2, nav_col3, nav_col4 = st.columns(4)
-    
-    with nav_col1:
-        if st.button("🔍 Zoom In 2x"):
-            st.session_state.zoom_history.append(st.session_state.fractal_params.copy())
-            st.session_state.fractal_params['zoom'] *= 2
-            if st.session_state.auto_mode:
-                with st.spinner("🔍 Zooming in..."):
-                    fractal = generate_fractal(
-                        fractal_type=st.session_state.current_fractal_type,
-                        width=st.session_state.fractal_params['width'], 
-                        height=st.session_state.fractal_params['height'], 
-                        max_iter=st.session_state.fractal_params['iterations'],
-                        zoom=st.session_state.fractal_params['zoom'], 
-                        center_real=st.session_state.fractal_params['center_real'], 
-                        center_imag=st.session_state.fractal_params['center_imag']
-                    )
-                    fractal_with_overlay = add_sanskrit_overlay(
-                        fractal, st.session_state.current_mantra_idx, st.session_state.current_colormap
-                    )
-                    st.session_state.current_fractal = fractal_with_overlay
-            st.rerun()
-    
-    with nav_col2:
-        if st.button("🔍 Zoom Out 2x"):
-            st.session_state.zoom_history.append(st.session_state.fractal_params.copy())
-            st.session_state.fractal_params['zoom'] /= 2
-            if st.session_state.auto_mode:
-                with st.spinner("🔍 Zooming out..."):
-                    fractal = generate_fractal(
-                        fractal_type=st.session_state.current_fractal_type,
-                        width=st.session_state.fractal_params['width'], 
-                        height=st.session_state.fractal_params['height'], 
-                        max_iter=st.session_state.fractal_params['iterations'],
-                        zoom=st.session_state.fractal_params['zoom'], 
-                        center_real=st.session_state.fractal_params['center_real'], 
-                        center_imag=st.session_state.fractal_params['center_imag']
-                    )
-                    fractal_with_overlay = add_sanskrit_overlay(
-                        fractal, st.session_state.current_mantra_idx, st.session_state.current_colormap
-                    )
-                    st.session_state.current_fractal = fractal_with_overlay
-            st.rerun()
-    
-    with nav_col3:
-        if st.button("⬆️ Move Up"):
-            st.session_state.zoom_history.append(st.session_state.fractal_params.copy())
-            st.session_state.fractal_params['center_imag'] += 0.1 / st.session_state.fractal_params['zoom']
-            if st.session_state.auto_mode:
-                with st.spinner("⬆️ Moving up..."):
-                    fractal = generate_fractal(
-                        fractal_type=st.session_state.current_fractal_type,
-                        width=st.session_state.fractal_params['width'], 
-                        height=st.session_state.fractal_params['height'], 
-                        max_iter=st.session_state.fractal_params['iterations'],
-                        zoom=st.session_state.fractal_params['zoom'], 
-                        center_real=st.session_state.fractal_params['center_real'], 
-                        center_imag=st.session_state.fractal_params['center_imag']
-                    )
-                    fractal_with_overlay = add_sanskrit_overlay(
-                        fractal, st.session_state.current_mantra_idx, st.session_state.current_colormap
-                    )
-                    st.session_state.current_fractal = fractal_with_overlay
-            st.rerun()
-    
-    with nav_col4:
-        if st.button("⬇️ Move Down"):
-            st.session_state.zoom_history.append(st.session_state.fractal_params.copy())
-            st.session_state.fractal_params['center_imag'] -= 0.1 / st.session_state.fractal_params['zoom']
-            if st.session_state.auto_mode:
-                with st.spinner("⬇️ Moving down..."):
-                    fractal = generate_fractal(
-                        fractal_type=st.session_state.current_fractal_type,
-                        width=st.session_state.fractal_params['width'], 
-                        height=st.session_state.fractal_params['height'], 
-                        max_iter=st.session_state.fractal_params['iterations'],
-                        zoom=st.session_state.fractal_params['zoom'], 
-                        center_real=st.session_state.fractal_params['center_real'], 
-                        center_imag=st.session_state.fractal_params['center_imag']
-                    )
-                    fractal_with_overlay = add_sanskrit_overlay(
-                        fractal, st.session_state.current_mantra_idx, st.session_state.current_colormap
-                    )
-                    st.session_state.current_fractal = fractal_with_overlay
-            st.rerun()
 
 with tab2:
     st.header("Audio Synthesis")
+    st.markdown('<div class="glass-panel">', unsafe_allow_html=True)
     
-    # Audio parameter controls
     col1, col2 = st.columns(2)
     
     with col1:
+        st.subheader("Frequency Settings")
         base_freq = st.slider("Base Frequency (Hz)", 50, 300, int(st.session_state.audio_params['base_freq']))
         harmony_freq = st.slider("Harmony Frequency (Hz)", 200, 800, int(st.session_state.audio_params['harmony_freq']))
+        
+        # Preset frequencies
+        st.write("**Sacred Frequency Presets:**")
+        if st.button("🕉️ Om (136.1 Hz)"):
+            base_freq = 136.1
+        if st.button("💫 A=432 Hz"):
+            harmony_freq = 432.0
+        if st.button("🎵 Solfeggio (528 Hz)"):
+            harmony_freq = 528.0
     
     with col2:
+        st.subheader("Audio Properties")
         duration = st.slider("Duration (seconds)", 1, 30, st.session_state.audio_params['duration'])
-        sample_rate = st.selectbox("Sample Rate", [22050, 44100], index=0)
+        sample_rate = st.selectbox("Sample Rate", [22050, 44100, 48000], index=1)
+        
+        # Audio enhancement options
+        add_reverb = st.checkbox("Add Reverb Effect", value=True)
+        stereo_width = st.slider("Stereo Width", 0.0, 1.0, 0.5)
     
     # Update session state
     st.session_state.audio_params.update({
@@ -1344,9 +1342,8 @@ with tab2:
         'duration': duration, 'sample_rate': sample_rate
     })
     
-    # Generate audio
     if st.button("🎵 Generate Audio", key="generate_audio"):
-        with st.spinner("🎵 Synthesizing audio..."):
+        with st.spinner("🎵 Synthesizing enhanced audio..."):
             audio_data, sample_rate = generate_audio(
                 base_freq=base_freq, harmony_freq=harmony_freq,
                 duration=duration, sample_rate=sample_rate
@@ -1354,86 +1351,148 @@ with tab2:
             st.session_state.current_audio = (audio_data, sample_rate)
             st.success("🎵 Audio generated successfully!")
     
-    # Display audio player
     if st.session_state.current_audio is not None:
         audio_data, sample_rate = st.session_state.current_audio
-        
-        # Create audio file for playback
         audio_bytes = create_audio_download(audio_data, sample_rate)
         st.audio(audio_bytes, format='audio/wav')
         
-        # Show frequency information
-        st.markdown("**Active Frequencies:**")
-        st.write(f"- Base: {base_freq} Hz")
-        st.write(f"- Harmony: {harmony_freq} Hz") 
-        st.write(f"- Harmonics: {harmony_freq * 1.5:.1f} Hz, {harmony_freq * 2.0:.1f} Hz")
+        # Enhanced audio info
+        duration_actual = len(audio_data) / sample_rate
+        st.info(f"""
+        **🎵 Audio Properties:**
+        • **Base Frequency**: {base_freq} Hz
+        • **Harmony Frequency**: {harmony_freq} Hz
+        • **Duration**: {duration_actual:.1f}s
+        • **Sample Rate**: {sample_rate} Hz
+        • **File Size**: ~{len(audio_bytes)//1024}KB
+        """)
     else:
-        st.info("Click 'Generate Audio' to create sound")
+        st.info("Click 'Generate Audio' to create sacred frequencies")
+    
+    st.markdown('</div>', unsafe_allow_html=True)
 
 with tab3:
     st.header("Animation Generator")
+    st.markdown('<div class="glass-panel">', unsafe_allow_html=True)
     
-    # Animation controls
     col1, col2 = st.columns(2)
     
     with col1:
         st.subheader("Animation Settings")
         anim_type = st.selectbox("Animation Type", 
-            ["zoom_in", "zoom_out", "rotate_center", "parameter_sweep"],
+            ["zoom_in", "zoom_out", "parameter_sweep", "color_cycle"],
             format_func=lambda x: x.replace('_', ' ').title())
         
-        frames = st.slider("Number of Frames", 10, 100, 30)
-        frame_rate = st.slider("Frame Rate (FPS)", 1, 30, 10)
+        frames = st.slider("Number of Frames", 5, 30, 15)
         
-        # Animation-specific parameters
         if anim_type in ["zoom_in", "zoom_out"]:
-            zoom_factor = st.slider("Zoom Factor", 1.1, 10.0, 2.0)
-        elif anim_type == "rotate_center":
-            rotation_angle = st.slider("Rotation Angle (degrees)", 30, 360, 180)
+            zoom_factor = st.slider("Zoom Factor", 1.1, 5.0, 2.0)
         elif anim_type == "parameter_sweep":
-            param_to_sweep = st.selectbox("Parameter to Sweep", ["center_real", "center_imag", "iterations"])
-            sweep_range = st.slider("Sweep Range", 0.1, 2.0, 0.5)
+            sweep_param = st.selectbox("Parameter to Sweep", ["center_real", "center_imag", "both"])
+            sweep_range = st.slider("Sweep Range", 0.01, 0.5, 0.1)
+        elif anim_type == "color_cycle":
+            color_schemes = ["hot", "viridis", "plasma", "magma", "inferno", "cool"]
     
     with col2:
-        st.subheader("Preview Settings")
-        preview_quality = st.selectbox("Preview Quality", ["Low (200x150)", "Medium (400x300)", "High (600x450)"])
-        preview_frames = st.slider("Preview Frames", 5, 20, 10)
+        st.subheader("Generate Animation")
         
-        if st.button("🎬 Generate Animation Preview"):
-            st.info("Animation generation would start here...")
-            # Animation generation logic would go here
+        if st.button("🎬 Generate Animation Sequence"):
+            progress_bar = st.progress(0)
+            status_text = st.empty()
+            
+            animation_frames = []
+            base_params = st.session_state.fractal_params.copy()
+            
+            for i in range(frames):
+                progress = i / max(1, frames - 1)
+                progress_bar.progress((i + 1) / frames)
+                status_text.text(f"Generating frame {i+1}/{frames}")
+                
+                # Calculate frame parameters
+                frame_params = base_params.copy()
+                current_colormap = st.session_state.current_colormap
+                
+                if anim_type == "zoom_in":
+                    frame_params['zoom'] = base_params['zoom'] * (zoom_factor ** progress)
+                elif anim_type == "zoom_out":
+                    frame_params['zoom'] = base_params['zoom'] / (zoom_factor ** progress)
+                elif anim_type == "parameter_sweep":
+                    if sweep_param == "center_real":
+                        frame_params['center_real'] = base_params['center_real'] + (sweep_range * np.sin(progress * 2 * np.pi))
+                    elif sweep_param == "center_imag":
+                        frame_params['center_imag'] = base_params['center_imag'] + (sweep_range * np.sin(progress * 2 * np.pi))
+                    else:  # both
+                        frame_params['center_real'] = base_params['center_real'] + (sweep_range * np.sin(progress * 2 * np.pi))
+                        frame_params['center_imag'] = base_params['center_imag'] + (sweep_range * np.cos(progress * 2 * np.pi))
+                elif anim_type == "color_cycle":
+                    current_colormap = color_schemes[int(progress * (len(color_schemes) - 1))]
+                
+                # Generate frame
+                frame = generate_fractal(
+                    fractal_type=st.session_state.current_fractal_type,
+                    width=300, height=225,
+                    max_iter=50,
+                    zoom=frame_params['zoom'],
+                    center_real=frame_params['center_real'],
+                    center_imag=frame_params['center_imag']
+                )
+                
+                # Apply colormap
+                frame_norm = (frame - frame.min()) / (frame.max() - frame.min())
+                cmap = plt.get_cmap(current_colormap)
+                colored = cmap(frame_norm)
+                frame_img = (colored[:, :, :3] * 255).astype(np.uint8)
+                animation_frames.append(frame_img)
+            
+            progress_bar.progress(1.0)
+            status_text.text("Animation complete!")
+            
+            # Store animation
+            st.session_state.current_animation = animation_frames
+            st.success(f"Generated {len(animation_frames)} frame animation!")
     
-    st.subheader("Animation Queue")
-    if 'animation_queue' not in st.session_state:
-        st.session_state.animation_queue = []
+    st.markdown('</div>', unsafe_allow_html=True)
     
-    if st.session_state.animation_queue:
-        for i, anim in enumerate(st.session_state.animation_queue):
-            col1, col2, col3 = st.columns([3, 1, 1])
-            with col1:
-                st.write(f"**{anim['type']}** - {anim['frames']} frames @ {anim['fps']} FPS")
-            with col2:
-                if st.button("Preview", key=f"preview_{i}"):
-                    st.info("Preview would show here")
-            with col3:
-                if st.button("Delete", key=f"anim_del_{i}"):
-                    st.session_state.animation_queue.pop(i)
-                    st.rerun()
+    # Display animation
+    if st.session_state.current_animation:
+        st.markdown('<div class="glass-panel">', unsafe_allow_html=True)
+        st.subheader("Animation Preview")
+        
+        frames = st.session_state.current_animation
+        
+        # Frame selector
+        frame_idx = st.slider("Preview Frame", 0, len(frames)-1, 0)
+        st.image(frames[frame_idx], caption=f"Frame {frame_idx+1}/{len(frames)}", width=400)
+        
+        # Auto-play animation
+        play_col1, play_col2 = st.columns(2)
+        with play_col1:
+            if st.button("▶️ Play Animation"):
+                placeholder = st.empty()
+                for i, frame in enumerate(frames):
+                    placeholder.image(frame, caption=f"Frame {i+1}/{len(frames)}", width=400)
+                    time.sleep(0.2)
+        
+        with play_col2:
+            if st.button("🗑️ Clear Animation"):
+                st.session_state.current_animation = []
+                st.experimental_rerun()
+        
+        st.markdown('</div>', unsafe_allow_html=True)
     else:
-        st.info("No animations in queue. Create one above!")
+        st.info("Generate an animation sequence to see preview controls")
 
 with tab4:
     st.header("Gallery & Community")
+    st.markdown('<div class="glass-panel">', unsafe_allow_html=True)
     
-    # Gallery section
+    # Enhanced gallery
     if st.session_state.gallery:
         st.subheader(f"My Fractals ({len(st.session_state.gallery)})")
         
-        # Gallery display options
         display_mode = st.radio("Display Mode", ["Grid", "List"], horizontal=True)
         
         if display_mode == "Grid":
-            # Grid layout for gallery
             cols = st.columns(3)
             for i, item in enumerate(st.session_state.gallery):
                 with cols[i % 3]:
@@ -1442,29 +1501,36 @@ with tab4:
                     with col1:
                         if st.button("Load", key=f"load_{i}"):
                             st.session_state.fractal_params.update(item['params'])
+                            st.session_state.current_fractal_type = item.get('fractal_type', 'mandelbrot')
+                            st.session_state.current_colormap = item.get('colormap', 'hot')
                             st.success("Loaded!")
-                            st.rerun()
+                            st.experimental_rerun()
                     with col2:
                         if st.button("Delete", key=f"del_{i}"):
                             st.session_state.gallery.pop(i)
                             st.success("Deleted!")
-                            st.rerun()
+                            st.experimental_rerun()
         else:
-            # List layout for gallery
             for i, item in enumerate(st.session_state.gallery):
-                col1, col2, col3 = st.columns([3, 1, 1])
+                col1, col2, col3, col4 = st.columns([3, 1, 1, 1])
                 with col1:
-                    st.image(item['image'], width=200)
+                    st.image(item['image'], width=150)
+                    timestamp = time.strftime('%Y-%m-%d %H:%M', time.localtime(item['timestamp']))
+                    st.caption(f"Created: {timestamp}")
                 with col2:
                     if st.button("Load", key=f"load_{i}"):
                         st.session_state.fractal_params.update(item['params'])
                         st.success("Loaded!")
-                        st.rerun()
+                        st.experimental_rerun()
                 with col3:
+                    if st.button("Info", key=f"info_{i}"):
+                        params = item['params']
+                        st.info(f"Zoom: {params['zoom']:.2f}x, Iterations: {params['iterations']}")
+                with col4:
                     if st.button("Delete", key=f"del_{i}"):
                         st.session_state.gallery.pop(i)
                         st.success("Deleted!")
-                        st.rerun()
+                        st.experimental_rerun()
     else:
         st.info("No saved fractals yet. Generate and save some fractals to build your gallery!")
     
@@ -1483,82 +1549,53 @@ with tab4:
         else:
             st.warning("Generate a fractal first")
     
-    # Bookmark section
-    if st.session_state.bookmark_history:
-        st.subheader(f"Bookmarked Locations ({len(st.session_state.bookmark_history)})")
-        for i, bookmark in enumerate(st.session_state.bookmark_history):
-            col1, col2, col3 = st.columns([2, 1, 1])
-            with col1:
-                st.write(f"**{bookmark['name']}** - {bookmark['type'].title()}")
-                st.write(f"Real: {bookmark['params']['center_real']:.4f}, Imag: {bookmark['params']['center_imag']:.4f}, Zoom: {bookmark['params']['zoom']:.1f}x")
-            with col2:
-                if st.button("Load", key=f"bookmark_{i}"):
-                    st.session_state.fractal_params.update(bookmark['params'])
-                    st.session_state.current_fractal_type = bookmark['type']
-                    st.success("Bookmark loaded!")
-                    st.rerun()
-            with col3:
-                if st.button("Delete", key=f"bookmark_del_{i}"):
-                    st.session_state.bookmark_history.pop(i)
-                    st.success("Bookmark deleted!")
-                    st.rerun()
-    
-    # Community sharing section
-    st.subheader("Community Sharing")
-    if st.session_state.current_fractal is not None:
-        params = st.session_state.fractal_params
-        share_url = f"?type={st.session_state.current_fractal_type}&zoom={params['zoom']:.3f}&real={params['center_real']:.6f}&imag={params['center_imag']:.6f}&iter={params['iterations']}"
-        st.code(share_url, language="text")
-        st.info("📋 Copy this URL to share your fractal coordinates with others!")
-    else:
-        st.info("Generate a fractal to get a shareable URL")
+    st.markdown('</div>', unsafe_allow_html=True)
 
 with tab5:
     st.header("Settings & Performance")
+    st.markdown('<div class="glass-panel">', unsafe_allow_html=True)
     
     # Theme settings
-    st.subheader("🎨 Appearance Settings")
     col1, col2 = st.columns(2)
     
     with col1:
-        new_theme_mode = st.selectbox("Theme Mode", ["Light", "Dark", "Auto"], 
-                                     index=["Light", "Dark", "Auto"].index(st.session_state.theme_mode))
+        st.subheader("🎨 Appearance")
+        new_theme_mode = st.selectbox("Theme Mode", ["Light", "Dark"], 
+                                     index=["Light", "Dark"].index(st.session_state.theme_mode))
         
-        # Apply theme change immediately
         if new_theme_mode != st.session_state.theme_mode:
             st.session_state.theme_mode = new_theme_mode
             st.success(f"🎨 Switched to {new_theme_mode} mode!")
-            st.rerun()
-            
-        ui_scale = st.slider("UI Scale", 0.8, 1.2, 1.0, 0.1)
-        animation_speed = st.slider("Animation Speed", 0.5, 2.0, 1.0, 0.1)
-    
-    with col2:
-        auto_save = st.checkbox("Auto-save fractals", value=False)
-        show_coordinates = st.checkbox("Show coordinates overlay", value=True)
-        enable_sound = st.checkbox("Enable UI sound effects", value=False)
+            st.experimental_rerun()
         
-        # Theme preview
-        st.markdown(f"**Current Theme**: {st.session_state.theme_mode}")
-        if st.button("🔄 Refresh Theme"):
-            st.rerun()
-    
-    # Performance settings
-    st.subheader("⚡ Performance Settings")
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        render_quality = st.selectbox("Default Render Quality", ["Draft", "Standard", "High", "Ultra"], index=1)
-        max_iterations = st.slider("Max Iterations Limit", 100, 1000, 500, 50)
-        memory_limit = st.slider("Memory Limit (MB)", 100, 1000, 500, 50)
+        # Style preferences
+        st.session_state.style_preferences['particle_intensity'] = st.selectbox(
+            "Particle Intensity", ["low", "medium", "high"], 
+            index=["low", "medium", "high"].index(st.session_state.style_preferences.get('particle_intensity', 'medium'))
+        )
+        
+        st.session_state.style_preferences['animation_speed'] = st.selectbox(
+            "Animation Speed", ["slow", "normal", "fast"],
+            index=["slow", "normal", "fast"].index(st.session_state.style_preferences.get('animation_speed', 'normal'))
+        )
     
     with col2:
-        cache_size = st.slider("Cache Size (fractals)", 5, 50, 20, 5)
-        preview_quality = st.selectbox("Preview Quality", ["Low", "Medium", "High"], index=1)
-        parallel_processing = st.checkbox("Enable parallel processing", value=True)
+        st.subheader("🔧 Preferences")
+        st.session_state.style_preferences['glow_effects'] = st.checkbox(
+            "Glow Effects", value=st.session_state.style_preferences.get('glow_effects', True)
+        )
+        st.session_state.style_preferences['micro_interactions'] = st.checkbox(
+            "Micro Interactions", value=st.session_state.style_preferences.get('micro_interactions', True)
+        )
+        st.session_state.style_preferences['advanced_gradients'] = st.checkbox(
+            "Advanced Gradients", value=st.session_state.style_preferences.get('advanced_gradients', True)
+        )
+        
+        if st.button("🔄 Apply Style Changes"):
+            st.experimental_rerun()
     
-    # System information
-    st.subheader("📊 System Information")
+    # Performance info
+    st.subheader("📊 Performance Statistics")
     col1, col2, col3 = st.columns(3)
     
     with col1:
@@ -1566,50 +1603,30 @@ with tab5:
         st.metric("Fractals Generated", st.session_state.performance_stats["total_fractals"])
     
     with col2:
-        st.metric("Controls Status", "Locked" if st.session_state.locked_controls else "Unlocked")
         st.metric("Gallery Size", len(st.session_state.gallery))
-    
-    with col3:
         memory_usage = len(str(st.session_state)) // 1024
         st.metric("Memory Usage", f"{memory_usage}KB")
+    
+    with col3:
         if st.session_state.performance_stats["render_times"]:
             avg_render = np.mean(st.session_state.performance_stats["render_times"][-10:])
             st.metric("Avg Render Time", f"{avg_render:.2f}s")
+            max_render = max(st.session_state.performance_stats["render_times"][-10:])
+            st.metric("Peak Render Time", f"{max_render:.2f}s")
         else:
             st.metric("Avg Render Time", "N/A")
+            st.metric("Peak Render Time", "N/A")
     
     # Performance graph
     if st.session_state.performance_stats["render_times"]:
         st.subheader("📈 Performance History")
         st.line_chart(st.session_state.performance_stats["render_times"][-20:])
     
-    # Reset and maintenance
-    st.subheader("🔧 Maintenance")
-    col1, col2, col3 = st.columns(3)
-    
-    with col1:
-        if st.button("🗑️ Clear Gallery"):
-            st.session_state.gallery = []
-            st.success("Gallery cleared!")
-    
-    with col2:
-        if st.button("📊 Reset Performance Stats"):
-            st.session_state.performance_stats = {"render_times": [], "total_fractals": 0}
-            st.success("Performance stats reset!")
-    
-    with col3:
-        if st.button("🔄 Reset All Settings"):
-            # Reset to defaults but keep current fractal
-            current_fractal = st.session_state.current_fractal
-            for key in list(st.session_state.keys()):
-                if key != 'current_fractal':
-                    del st.session_state[key]
-            st.session_state.current_fractal = current_fractal
-            st.success("Settings reset!")
-            st.rerun()
+    st.markdown('</div>', unsafe_allow_html=True)
 
 with tab6:
     st.header("Export & Download")
+    st.markdown('<div class="glass-panel">', unsafe_allow_html=True)
     
     col1, col2 = st.columns(2)
     
@@ -1617,24 +1634,16 @@ with tab6:
         st.subheader("🖼️ Visual Export")
         
         if st.session_state.current_fractal is not None:
-            # Export options
             export_format = st.selectbox("Image Format", ["PNG", "JPEG", "TIFF"], index=0)
-            export_quality = st.selectbox("Export Quality", ["Current Resolution", "HD (1920x1440)", "4K (3840x2880)", "8K (7680x5760)"], index=0)
-            include_overlay = st.checkbox("Include Sanskrit overlay", value=True)
+            export_quality = st.selectbox("Export Quality", ["Current Resolution", "HD (1920x1440)", "4K (3840x2880)"], index=0)
+            include_overlay = st.checkbox("Include Sanskrit overlay", value=not st.session_state.disable_overlay)
             
-            # Generate export
             if st.button("🎨 Generate Export"):
-                if export_quality == "Current Resolution":
-                    export_image = st.session_state.current_fractal
-                else:
-                    # Generate high-resolution version
-                    with st.spinner("Generating high-resolution fractal..."):
-                        if export_quality == "HD (1920x1440)":
-                            width, height = 1920, 1440
-                        elif export_quality == "4K (3840x2880)":
-                            width, height = 3840, 2880
-                        else:  # 8K
-                            width, height = 7680, 5760
+                with st.spinner("Generating export..."):
+                    if export_quality == "Current Resolution":
+                        export_image = st.session_state.current_fractal
+                    else:
+                        width, height = (1920, 1440) if export_quality.startswith("HD") else (3840, 2880)
                         
                         hd_fractal = generate_fractal(
                             fractal_type=st.session_state.current_fractal_type,
@@ -1648,39 +1657,34 @@ with tab6:
                         if include_overlay:
                             export_image = add_sanskrit_overlay(hd_fractal, st.session_state.current_mantra_idx, st.session_state.current_colormap)
                         else:
-                            # Apply colormap without overlay
                             fractal_norm = (hd_fractal - hd_fractal.min()) / (hd_fractal.max() - hd_fractal.min())
                             cmap = plt.get_cmap(st.session_state.current_colormap)
                             colored = cmap(fractal_norm)
                             export_image = (colored[:, :, :3] * 255).astype(np.uint8)
-                
-                # Convert image for download
-                img = Image.fromarray(export_image)
-                buf = io.BytesIO()
-                
-                if export_format == "PNG":
-                    img.save(buf, format='PNG', optimize=True)
-                    mime_type = "image/png"
-                    file_ext = "png"
-                elif export_format == "JPEG":
-                    img = img.convert('RGB')  # JPEG doesn't support alpha
-                    img.save(buf, format='JPEG', quality=95, optimize=True)
-                    mime_type = "image/jpeg"
-                    file_ext = "jpg"
-                else:  # TIFF
-                    img.save(buf, format='TIFF', compression='lzw')
-                    mime_type = "image/tiff"
-                    file_ext = "tiff"
-                
-                buf.seek(0)
-                
-                st.download_button(
-                    label=f"💾 Download {export_format}",
-                    data=buf.getvalue(),
-                    file_name=f"aoin_fractal_{st.session_state.current_fractal_type}_{int(time.time())}.{file_ext}",
-                    mime=mime_type
-                )
-                st.success(f"Export ready! File size: ~{len(buf.getvalue())//1024}KB")
+                    
+                    # Create download
+                    img = Image.fromarray(export_image)
+                    buf = io.BytesIO()
+                    
+                    if export_format == "PNG":
+                        img.save(buf, format='PNG', optimize=True)
+                        mime_type, file_ext = "image/png", "png"
+                    elif export_format == "JPEG":
+                        img.convert('RGB').save(buf, format='JPEG', quality=95, optimize=True)
+                        mime_type, file_ext = "image/jpeg", "jpg"
+                    else:
+                        img.save(buf, format='TIFF', compression='lzw')
+                        mime_type, file_ext = "image/tiff", "tiff"
+                    
+                    buf.seek(0)
+                    
+                    st.download_button(
+                        label=f"💾 Download {export_format}",
+                        data=buf.getvalue(),
+                        file_name=f"aoin_fractal_{st.session_state.current_fractal_type}_{int(time.time())}.{file_ext}",
+                        mime=mime_type
+                    )
+                    st.success(f"Export ready! File size: ~{len(buf.getvalue())//1024}KB")
         else:
             st.info("Generate a fractal first")
     
@@ -1689,99 +1693,54 @@ with tab6:
         
         if st.session_state.current_audio is not None:
             audio_data, sample_rate = st.session_state.current_audio
-            
-            # Audio export options
-            audio_format = st.selectbox("Audio Format", ["WAV", "MP3 (simulated)"], index=0)
-            audio_quality = st.selectbox("Audio Quality", ["22kHz", "44kHz", "48kHz"], index=1)
-            
-            # Generate different quality
-            if audio_quality != "22kHz":
-                target_rate = 44100 if audio_quality == "44kHz" else 48000
-                with st.spinner("Resampling audio..."):
-                    # Simple resampling (in production, use scipy.signal.resample)
-                    ratio = target_rate / sample_rate
-                    new_length = int(len(audio_data) * ratio)
-                    resampled_audio = np.interp(np.linspace(0, len(audio_data), new_length), 
-                                              np.arange(len(audio_data)), audio_data)
-                    export_audio = resampled_audio
-                    export_sample_rate = target_rate
-            else:
-                export_audio = audio_data
-                export_sample_rate = sample_rate
-            
-            audio_bytes = create_audio_download(export_audio, export_sample_rate)
+            audio_bytes = create_audio_download(audio_data, sample_rate)
             
             st.download_button(
-                label=f"🎵 Download {audio_format}",
+                label="🎵 Download Audio WAV",
                 data=audio_bytes,
                 file_name=f"aoin_audio_{int(st.session_state.audio_params['base_freq'])}Hz_{int(time.time())}.wav",
                 mime="audio/wav"
             )
             
-            # Audio info
-            duration = len(export_audio) / export_sample_rate
-            st.info(f"Duration: {duration:.1f}s | Sample Rate: {export_sample_rate}Hz | Size: ~{len(audio_bytes)//1024}KB")
+            duration = len(audio_data) / sample_rate
+            st.info(f"Duration: {duration:.1f}s | Sample Rate: {sample_rate}Hz | Size: ~{len(audio_bytes)//1024}KB")
         else:
             st.info("Generate audio first")
     
-    # Batch export section
-    st.subheader("📦 Batch Export")
-    
-    if st.session_state.gallery:
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            st.write(f"**Gallery**: {len(st.session_state.gallery)} fractals")
-            batch_format = st.selectbox("Batch Format", ["PNG", "JPEG"], index=0, key="batch_format")
-            batch_quality = st.selectbox("Batch Quality", ["Current", "HD"], index=0, key="batch_quality")
-        
-        with col2:
-            include_metadata = st.checkbox("Include metadata files", value=True)
-            zip_download = st.checkbox("Create ZIP archive", value=True)
-        
-        if st.button("📦 Export All Fractals"):
-            st.info("Batch export would generate all gallery fractals with selected settings")
-            # In a real implementation, this would create a ZIP file with all fractals
-    else:
-        st.info("No fractals in gallery for batch export")
-    
     # Settings export
     st.subheader("⚙️ Settings Export")
-    
     export_options = st.multiselect("Export Settings", 
-        ["Fractal Parameters", "Audio Parameters", "Gallery", "Bookmarks", "Performance Stats"],
+        ["Fractal Parameters", "Audio Parameters", "Gallery", "Style Preferences"],
         default=["Fractal Parameters", "Audio Parameters"])
     
     if st.button("📋 Export Settings"):
-        export_data = {"timestamp": time.time(), "app_version": "Aoin's Fractal Studio v2.0"}
+        export_data = {"timestamp": time.time(), "app_version": "Aoin's Fractal Studio Enhanced v2.1"}
         
         if "Fractal Parameters" in export_options:
-            export_data["fractal_params"] = st.session_state.fractal_params
-            export_data["fractal_type"] = st.session_state.current_fractal_type
-            export_data["colormap"] = st.session_state.current_colormap
-            export_data["mantra_index"] = st.session_state.current_mantra_idx
+            export_data.update({
+                "fractal_params": st.session_state.fractal_params,
+                "fractal_type": st.session_state.current_fractal_type,
+                "colormap": st.session_state.current_colormap,
+                "mantra_index": st.session_state.current_mantra_idx
+            })
         
         if "Audio Parameters" in export_options:
             export_data["audio_params"] = st.session_state.audio_params
         
         if "Gallery" in export_options:
-            # Export gallery metadata only (not images)
-            gallery_metadata = []
-            for item in st.session_state.gallery:
-                metadata = {
+            gallery_metadata = [
+                {
                     "timestamp": item["timestamp"],
                     "params": item["params"],
                     "fractal_type": item.get("fractal_type", "mandelbrot"),
                     "colormap": item.get("colormap", "hot")
                 }
-                gallery_metadata.append(metadata)
+                for item in st.session_state.gallery
+            ]
             export_data["gallery_metadata"] = gallery_metadata
         
-        if "Bookmarks" in export_options:
-            export_data["bookmarks"] = st.session_state.bookmark_history
-        
-        if "Performance Stats" in export_options:
-            export_data["performance_stats"] = st.session_state.performance_stats
+        if "Style Preferences" in export_options:
+            export_data["style_preferences"] = st.session_state.style_preferences
         
         json_str = json.dumps(export_data, indent=2)
         st.download_button(
@@ -1792,9 +1751,14 @@ with tab6:
         )
         
         st.success(f"Settings exported with {len(export_options)} categories!")
+    
+    st.markdown('</div>', unsafe_allow_html=True)
 
-# Footer
+# Enhanced footer
 st.markdown("---")
-st.markdown("**💙 Aoin's Fractal Studio** - Mathematical visualization and audio synthesis")
-st.markdown("Built with Streamlit • Mobile optimized interface • Dual input controls")
+st.markdown('<div class="glass-panel">', unsafe_allow_html=True)
+st.markdown("**💙 Aoin's Fractal Studio Enhanced Edition**")
+st.markdown("*Mathematical visualization • Audio synthesis • Advanced styling*")
+st.markdown("Built with Streamlit • Glassmorphism UI • Dual input controls • Working animations")
 st.markdown("*Ready for deployment as part of a larger application suite*")
+st.markdown('</div>', unsafe_allow_html=True)
