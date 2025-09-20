@@ -15,61 +15,139 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Enhanced CSS with animations
-st.markdown("""
+# Enhanced CSS with animations and theme support
+theme_css = ""
+
+if st.session_state.theme_mode == "Dark":
+    theme_css = """
+    .stApp {
+        background-color: #0e1117;
+        color: #fafafa;
+    }
+    .main .block-container {
+        background-color: #0e1117;
+    }
+    .stMarkdown {
+        color: #fafafa;
+    }
+    .stSelectbox > div > div {
+        background-color: #262730;
+        color: #fafafa;
+    }
+    .stNumberInput > div > div > input {
+        background-color: #262730;
+        color: #fafafa;
+        border: 1px solid #4A90E2;
+    }
+    .stSlider > div > div > div {
+        background-color: #4A90E2;
+    }
+    .stExpander {
+        background-color: #1e1e2e;
+        border: 1px solid #4A90E2;
+    }
+    .stTabs [data-baseweb="tab-list"] {
+        background-color: #262730;
+    }
+    .stTabs [data-baseweb="tab"] {
+        color: #fafafa;
+    }
+    """
+elif st.session_state.theme_mode == "Light":
+    theme_css = """
+    .stApp {
+        background-color: #ffffff;
+        color: #000000;
+    }
+    .main .block-container {
+        background-color: #ffffff;
+    }
+    .stMarkdown {
+        color: #000000;
+    }
+    .stSelectbox > div > div {
+        background-color: #f0f2f6;
+        color: #000000;
+    }
+    .stNumberInput > div > div > input {
+        background-color: #f0f2f6;
+        color: #000000;
+        border: 1px solid: #4A90E2;
+    }
+    .stExpander {
+        background-color: #f8f9fa;
+        border: 1px solid #4A90E2;
+    }
+    .stTabs [data-baseweb="tab-list"] {
+        background-color: #f0f2f6;
+    }
+    .stTabs [data-baseweb="tab"] {
+        color: #000000;
+    }
+    """
+
+st.markdown(f"""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
     
-    .main > div { padding: 0.5rem !important; }
-    .stSlider > div > div > div > div { background-color: #4A90E2; }
+    {theme_css}
     
-    .stButton > button { 
+    .main > div {{ padding: 0.5rem !important; }}
+    .stSlider > div > div > div > div {{ background-color: #4A90E2; }}
+    
+    .stButton > button {{ 
         width: 100%; height: 3rem; font-size: 1.1rem;
         background: linear-gradient(45deg, #4A90E2, #7B68EE);
         color: white; border: none; border-radius: 15px;
         margin: 0.25rem 0; box-shadow: 0 4px 15px rgba(74, 144, 226, 0.3);
         transition: all 0.3s ease; position: relative; overflow: hidden;
-    }
+    }}
     
-    .stButton > button:hover {
+    .stButton > button:hover {{
         transform: translateY(-2px); box-shadow: 0 8px 25px rgba(74, 144, 226, 0.4);
         background: linear-gradient(45deg, #5A9FF2, #8B78FE);
-    }
+    }}
     
-    .generate-button {
+    .generate-button {{
         background: linear-gradient(45deg, #FF6B6B, #4ECDC4) !important;
         font-size: 1.3rem !important;
         height: 4rem !important;
         font-weight: bold !important;
         box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4) !important;
-    }
+    }}
     
-    .floating-particles {
+    .floating-particles {{
         position: fixed; top: 0; left: 0; width: 100%; height: 100%;
         pointer-events: none; z-index: -1; overflow: hidden;
-    }
+    }}
     
-    .particle {
+    .particle {{
         position: absolute; width: 4px; height: 4px;
         background: radial-gradient(circle, #4A90E2, transparent);
         border-radius: 50%; animation: float 15s infinite linear; opacity: 0.6;
-    }
+    }}
     
-    @keyframes float {
-        0% { transform: translateY(100vh) rotate(0deg); opacity: 0; }
-        10% { opacity: 0.6; }
-        90% { opacity: 0.6; }
-        100% { transform: translateY(-100px) rotate(360deg); opacity: 0; }
-    }
+    @keyframes float {{
+        0% {{ transform: translateY(100vh) rotate(0deg); opacity: 0; }}
+        10% {{ opacity: 0.6; }}
+        90% {{ opacity: 0.6; }}
+        100% {{ transform: translateY(-100px) rotate(360deg); opacity: 0; }}
+    }}
     
-    .fractal-container {
+    .fractal-container {{
         position: relative; border-radius: 15px; overflow: hidden;
         box-shadow: 0 10px 30px rgba(0,0,0,0.3); transition: all 0.3s ease;
-    }
+    }}
     
-    .fractal-container:hover {
+    .fractal-container:hover {{
         transform: scale(1.02); box-shadow: 0 15px 40px rgba(74, 144, 226, 0.3);
-    }
+    }}
+    
+    .theme-indicator {{
+        position: fixed; top: 10px; right: 10px; z-index: 1000;
+        background: rgba(74, 144, 226, 0.8); color: white;
+        padding: 5px 10px; border-radius: 15px; font-size: 12px;
+    }}
 </style>
 
 <div class="floating-particles">
@@ -78,6 +156,10 @@ st.markdown("""
     <div class="particle" style="left: 50%; animation-delay: 8s;"></div>
     <div class="particle" style="left: 70%; animation-delay: 12s;"></div>
     <div class="particle" style="left: 90%; animation-delay: 16s;"></div>
+</div>
+
+<div class="theme-indicator">
+    🎨 {st.session_state.theme_mode} Mode
 </div>
 """, unsafe_allow_html=True)
 
@@ -133,8 +215,31 @@ if 'current_colormap' not in st.session_state:
 if 'current_mantra_idx' not in st.session_state:
     st.session_state.current_mantra_idx = 0
 
-if 'performance_stats' not in st.session_state:
-    st.session_state.performance_stats = {"render_times": [], "total_fractals": 0}
+if 'fractal_history' not in st.session_state:
+    st.session_state.fractal_history = []
+
+if 'advanced_mode' not in st.session_state:
+    st.session_state.advanced_mode = False
+
+if 'fractal_comparison' not in st.session_state:
+    st.session_state.fractal_comparison = {'enabled': False, 'fractal_a': None, 'fractal_b': None}
+
+if 'interactive_mode' not in st.session_state:
+    st.session_state.interactive_mode = False
+
+if 'theme_mode' not in st.session_state:
+    st.session_state.theme_mode = "Dark"
+
+if 'prev_params' not in st.session_state:
+    st.session_state.prev_params = {
+        'zoom': 1.0,
+        'center_real': -0.7269,
+        'center_imag': 0.1889,
+        'iterations': 100,
+        'fractal_type': "mandelbrot",
+        'colormap': "hot",
+        'mantra_idx': 0
+    }
 
 # Sanskrit mantras
 SANSKRIT_MANTRAS = [
@@ -358,7 +463,7 @@ with tab1:
                 st.rerun()
     
     with generate_col2:
-        auto_mode = st.checkbox("🔄 Auto-generate", help="Automatically generate when parameters change")
+        st.session_state.auto_mode = st.checkbox("🔄 Auto-generate", value=st.session_state.auto_mode, help="Automatically generate when parameters change")
     
     st.markdown("---")
     
@@ -374,8 +479,23 @@ with tab1:
                 'center_imag': np.random.uniform(-2, 2),
                 'iterations': np.random.choice([100, 150, 200])
             })
-            if auto_mode:
-                st.rerun()
+            if st.session_state.auto_mode:
+                # Auto-generate the fractal
+                with st.spinner("🎲 Generating random fractal..."):
+                    fractal = generate_fractal(
+                        fractal_type=st.session_state.current_fractal_type,
+                        width=st.session_state.fractal_params['width'], 
+                        height=st.session_state.fractal_params['height'], 
+                        max_iter=st.session_state.fractal_params['iterations'],
+                        zoom=st.session_state.fractal_params['zoom'], 
+                        center_real=st.session_state.fractal_params['center_real'], 
+                        center_imag=st.session_state.fractal_params['center_imag']
+                    )
+                    fractal_with_overlay = add_sanskrit_overlay(
+                        fractal, st.session_state.current_mantra_idx, st.session_state.current_colormap
+                    )
+                    st.session_state.current_fractal = fractal_with_overlay
+            st.rerun()
     
     with action_col2:
         if st.button("📍 Bookmark", help="Save current location"):
@@ -393,8 +513,22 @@ with tab1:
             if st.session_state.zoom_history:
                 prev_params = st.session_state.zoom_history.pop()
                 st.session_state.fractal_params.update(prev_params)
-                if auto_mode:
-                    st.rerun()
+                if st.session_state.auto_mode:
+                    with st.spinner("🔙 Loading previous location..."):
+                        fractal = generate_fractal(
+                            fractal_type=st.session_state.current_fractal_type,
+                            width=st.session_state.fractal_params['width'], 
+                            height=st.session_state.fractal_params['height'], 
+                            max_iter=st.session_state.fractal_params['iterations'],
+                            zoom=st.session_state.fractal_params['zoom'], 
+                            center_real=st.session_state.fractal_params['center_real'], 
+                            center_imag=st.session_state.fractal_params['center_imag']
+                        )
+                        fractal_with_overlay = add_sanskrit_overlay(
+                            fractal, st.session_state.current_mantra_idx, st.session_state.current_colormap
+                        )
+                        st.session_state.current_fractal = fractal_with_overlay
+                st.rerun()
     
     with action_col4:
         if st.button("🏠 Reset", help="Reset to default view"):
@@ -402,8 +536,22 @@ with tab1:
             st.session_state.fractal_params.update({
                 'zoom': 1.0, 'center_real': -0.7269, 'center_imag': 0.1889
             })
-            if auto_mode:
-                st.rerun()
+            if st.session_state.auto_mode:
+                with st.spinner("🏠 Resetting to default view..."):
+                    fractal = generate_fractal(
+                        fractal_type=st.session_state.current_fractal_type,
+                        width=st.session_state.fractal_params['width'], 
+                        height=st.session_state.fractal_params['height'], 
+                        max_iter=st.session_state.fractal_params['iterations'],
+                        zoom=st.session_state.fractal_params['zoom'], 
+                        center_real=st.session_state.fractal_params['center_real'], 
+                        center_imag=st.session_state.fractal_params['center_imag']
+                    )
+                    fractal_with_overlay = add_sanskrit_overlay(
+                        fractal, st.session_state.current_mantra_idx, st.session_state.current_colormap
+                    )
+                    st.session_state.current_fractal = fractal_with_overlay
+            st.rerun()
     
     with action_col5:
         if st.button("🔒 Lock" if not st.session_state.locked_controls else "🔓 Unlock"):
@@ -450,9 +598,13 @@ with tab1:
     else:
         st.info("👆 Click the **GENERATE FRACTAL** button above to create your first visualization!")
     
-    # Parameters section
+    # Parameters section - Redesigned for precision and safety
     if not st.session_state.locked_controls:
         with st.expander("🎛️ Fractal Parameters", expanded=True):
+            
+            # Input method selection
+            input_method = st.radio("Input Method", ["🎯 Precision (Number Input)", "🎚️ Sliders (Quick)"], horizontal=True)
+            
             col1, col2 = st.columns(2)
             
             with col1:
@@ -461,42 +613,71 @@ with tab1:
                     index=["mandelbrot", "julia", "burning_ship", "tricorn", "newton", "phoenix"].index(st.session_state.current_fractal_type),
                     format_func=lambda x: x.replace('_', ' ').title())
                 
-                # Zoom with both slider and manual input
-                st.write("**Zoom Level**")
-                zoom_col1, zoom_col2 = st.columns([3, 1])
-                with zoom_col1:
-                    zoom = st.slider("Zoom", 0.1, 500.0, st.session_state.fractal_params['zoom'], 0.1, label_visibility="collapsed")
-                with zoom_col2:
-                    zoom_manual = st.number_input("Zoom", value=st.session_state.fractal_params['zoom'], min_value=0.1, max_value=500.0, step=0.1, format="%.3f", label_visibility="collapsed")
-                zoom = zoom_manual if zoom_manual != st.session_state.fractal_params['zoom'] else zoom
+                if input_method == "🎯 Precision (Number Input)":
+                    # Primary method: Number inputs with step buttons
+                    st.write("**Zoom Level**")
+                    zoom_col1, zoom_col2, zoom_col3 = st.columns([2, 1, 1])
+                    with zoom_col1:
+                        zoom = st.number_input("Zoom", value=st.session_state.fractal_params['zoom'], 
+                                             min_value=0.1, max_value=500.0, step=0.1, format="%.3f", label_visibility="collapsed")
+                    with zoom_col2:
+                        if st.button("×2", key="zoom_double", help="Double zoom"):
+                            zoom = min(500.0, zoom * 2)
+                    with zoom_col3:
+                        if st.button("÷2", key="zoom_half", help="Half zoom"):
+                            zoom = max(0.1, zoom / 2)
+                    
+                    st.write("**Center (Real Part)**")
+                    real_col1, real_col2, real_col3 = st.columns([2, 1, 1])
+                    with real_col1:
+                        center_real = st.number_input("Real", value=st.session_state.fractal_params['center_real'], 
+                                                    min_value=-2.0, max_value=2.0, step=0.001, format="%.6f", label_visibility="collapsed")
+                    with real_col2:
+                        if st.button("←", key="real_left", help="Move left"):
+                            center_real = max(-2.0, center_real - 0.01/st.session_state.fractal_params['zoom'])
+                    with real_col3:
+                        if st.button("→", key="real_right", help="Move right"):
+                            center_real = min(2.0, center_real + 0.01/st.session_state.fractal_params['zoom'])
+                    
+                    st.write("**Iterations**")
+                    iter_col1, iter_col2, iter_col3 = st.columns([2, 1, 1])
+                    with iter_col1:
+                        iterations = st.number_input("Iterations", value=st.session_state.fractal_params['iterations'], 
+                                                   min_value=50, max_value=500, step=10, label_visibility="collapsed")
+                    with iter_col2:
+                        if st.button("+50", key="iter_up", help="Add 50 iterations"):
+                            iterations = min(500, iterations + 50)
+                    with iter_col3:
+                        if st.button("-50", key="iter_down", help="Subtract 50 iterations"):
+                            iterations = max(50, iterations - 50)
                 
-                # Center Real with both slider and manual input
-                st.write("**Center (Real Part)**")
-                real_col1, real_col2 = st.columns([3, 1])
-                with real_col1:
-                    center_real = st.slider("Real", -2.0, 2.0, st.session_state.fractal_params['center_real'], 0.001, label_visibility="collapsed")
-                with real_col2:
-                    real_manual = st.number_input("Real", value=st.session_state.fractal_params['center_real'], min_value=-2.0, max_value=2.0, step=0.001, format="%.6f", label_visibility="collapsed")
-                center_real = real_manual if real_manual != st.session_state.fractal_params['center_real'] else center_real
-                
-                # Iterations with both slider and manual input
-                st.write("**Iterations**")
-                iter_col1, iter_col2 = st.columns([3, 1])
-                with iter_col1:
-                    iterations = st.slider("Iterations", 50, 500, st.session_state.fractal_params['iterations'], 10, label_visibility="collapsed")
-                with iter_col2:
-                    iter_manual = st.number_input("Iterations", value=st.session_state.fractal_params['iterations'], min_value=50, max_value=500, step=10, label_visibility="collapsed")
-                iterations = iter_manual if iter_manual != st.session_state.fractal_params['iterations'] else iterations
+                else:
+                    # Secondary method: Sliders (smaller, with warnings)
+                    st.warning("⚠️ Slider mode: Be careful not to move accidentally!")
+                    
+                    zoom = st.slider("Zoom Level", 0.1, 500.0, st.session_state.fractal_params['zoom'], 0.1, 
+                                   help="⚠️ Move carefully to avoid accidental changes")
+                    center_real = st.slider("Center (Real)", -2.0, 2.0, st.session_state.fractal_params['center_real'], 0.001,
+                                          help="⚠️ Move carefully to avoid accidental changes")
+                    iterations = st.slider("Iterations", 50, 500, st.session_state.fractal_params['iterations'], 10,
+                                         help="⚠️ Move carefully to avoid accidental changes")
             
             with col2:
-                # Center Imaginary with both slider and manual input
-                st.write("**Center (Imaginary Part)**")
-                imag_col1, imag_col2 = st.columns([3, 1])
-                with imag_col1:
-                    center_imag = st.slider("Imaginary", -2.0, 2.0, st.session_state.fractal_params['center_imag'], 0.001, label_visibility="collapsed")
-                with imag_col2:
-                    imag_manual = st.number_input("Imaginary", value=st.session_state.fractal_params['center_imag'], min_value=-2.0, max_value=2.0, step=0.001, format="%.6f", label_visibility="collapsed")
-                center_imag = imag_manual if imag_manual != st.session_state.fractal_params['center_imag'] else center_imag
+                if input_method == "🎯 Precision (Number Input)":
+                    st.write("**Center (Imaginary Part)**")
+                    imag_col1, imag_col2, imag_col3 = st.columns([2, 1, 1])
+                    with imag_col1:
+                        center_imag = st.number_input("Imaginary", value=st.session_state.fractal_params['center_imag'], 
+                                                    min_value=-2.0, max_value=2.0, step=0.001, format="%.6f", label_visibility="collapsed")
+                    with imag_col2:
+                        if st.button("↓", key="imag_down", help="Move down"):
+                            center_imag = max(-2.0, center_imag - 0.01/st.session_state.fractal_params['zoom'])
+                    with imag_col3:
+                        if st.button("↑", key="imag_up", help="Move up"):
+                            center_imag = min(2.0, center_imag + 0.01/st.session_state.fractal_params['zoom'])
+                else:
+                    center_imag = st.slider("Center (Imaginary)", -2.0, 2.0, st.session_state.fractal_params['center_imag'], 0.001,
+                                          help="⚠️ Move carefully to avoid accidental changes")
                 
                 resolution = st.selectbox("Resolution", ["400x300", "600x450", "800x600", "1024x768"], index=1)
                 colormap = st.selectbox("Color Scheme", ["hot", "viridis", "plasma", "magma", "inferno", "cool", "spring", "winter", "autumn"], 
@@ -510,12 +691,22 @@ with tab1:
                     st.markdown("**Julia Set Parameters:**")
                     julia_real = st.number_input("Julia C (Real)", value=-0.7, min_value=-2.0, max_value=2.0, step=0.01, format="%.6f")
                     julia_imag = st.number_input("Julia C (Imag)", value=0.27015, min_value=-2.0, max_value=2.0, step=0.01, format="%.6f")
-                
+            
             # Parse resolution
             width, height = map(int, resolution.split('x'))
             
+            # Auto-update logic - Check if parameters actually changed
+            current_params = {
+                'zoom': zoom,
+                'center_real': center_real,
+                'center_imag': center_imag,
+                'iterations': iterations,
+                'fractal_type': fractal_type,
+                'colormap': colormap,
+                'mantra_idx': mantra_idx
+            }
+            
             # Update session state
-            old_params = st.session_state.fractal_params.copy()
             st.session_state.fractal_params.update({
                 'zoom': zoom, 'center_real': center_real, 'center_imag': center_imag,
                 'iterations': iterations, 'width': width, 'height': height
@@ -524,9 +715,45 @@ with tab1:
             st.session_state.current_colormap = colormap
             st.session_state.current_mantra_idx = mantra_idx
             
-            # Auto-generate if enabled and parameters changed
-            if auto_mode and old_params != st.session_state.fractal_params:
-                st.rerun()
+            # Auto-generate if enabled and parameters actually changed
+            if st.session_state.auto_mode:
+                params_changed = (
+                    current_params['zoom'] != st.session_state.prev_params['zoom'] or
+                    current_params['center_real'] != st.session_state.prev_params['center_real'] or
+                    current_params['center_imag'] != st.session_state.prev_params['center_imag'] or
+                    current_params['iterations'] != st.session_state.prev_params['iterations'] or
+                    current_params['fractal_type'] != st.session_state.prev_params['fractal_type'] or
+                    current_params['colormap'] != st.session_state.prev_params['colormap'] or
+                    current_params['mantra_idx'] != st.session_state.prev_params['mantra_idx']
+                )
+                
+                if params_changed:
+                    with st.spinner("🔄 Auto-generating fractal..."):
+                        fractal = generate_fractal(
+                            fractal_type=st.session_state.current_fractal_type,
+                            width=st.session_state.fractal_params['width'], 
+                            height=st.session_state.fractal_params['height'], 
+                            max_iter=st.session_state.fractal_params['iterations'],
+                            zoom=st.session_state.fractal_params['zoom'], 
+                            center_real=st.session_state.fractal_params['center_real'], 
+                            center_imag=st.session_state.fractal_params['center_imag']
+                        )
+                        
+                        # Add Sanskrit overlay
+                        fractal_with_overlay = add_sanskrit_overlay(
+                            fractal, 
+                            st.session_state.current_mantra_idx, 
+                            st.session_state.current_colormap
+                        )
+                        st.session_state.current_fractal = fractal_with_overlay
+                        
+                        # Update previous params to current
+                        st.session_state.prev_params = current_params.copy()
+                        st.success("✨ Auto-generated!")
+            
+            # Always update prev_params if not auto-generating  
+            if not st.session_state.auto_mode:
+                st.session_state.prev_params = current_params.copy()
     else:
         st.info("🔒 Controls are locked to prevent accidental changes. Click unlock to modify parameters.")
     
@@ -538,29 +765,85 @@ with tab1:
         if st.button("🔍 Zoom In 2x"):
             st.session_state.zoom_history.append(st.session_state.fractal_params.copy())
             st.session_state.fractal_params['zoom'] *= 2
-            if auto_mode:
-                st.rerun()
+            if st.session_state.auto_mode:
+                with st.spinner("🔍 Zooming in..."):
+                    fractal = generate_fractal(
+                        fractal_type=st.session_state.current_fractal_type,
+                        width=st.session_state.fractal_params['width'], 
+                        height=st.session_state.fractal_params['height'], 
+                        max_iter=st.session_state.fractal_params['iterations'],
+                        zoom=st.session_state.fractal_params['zoom'], 
+                        center_real=st.session_state.fractal_params['center_real'], 
+                        center_imag=st.session_state.fractal_params['center_imag']
+                    )
+                    fractal_with_overlay = add_sanskrit_overlay(
+                        fractal, st.session_state.current_mantra_idx, st.session_state.current_colormap
+                    )
+                    st.session_state.current_fractal = fractal_with_overlay
+            st.rerun()
     
     with nav_col2:
         if st.button("🔍 Zoom Out 2x"):
             st.session_state.zoom_history.append(st.session_state.fractal_params.copy())
             st.session_state.fractal_params['zoom'] /= 2
-            if auto_mode:
-                st.rerun()
+            if st.session_state.auto_mode:
+                with st.spinner("🔍 Zooming out..."):
+                    fractal = generate_fractal(
+                        fractal_type=st.session_state.current_fractal_type,
+                        width=st.session_state.fractal_params['width'], 
+                        height=st.session_state.fractal_params['height'], 
+                        max_iter=st.session_state.fractal_params['iterations'],
+                        zoom=st.session_state.fractal_params['zoom'], 
+                        center_real=st.session_state.fractal_params['center_real'], 
+                        center_imag=st.session_state.fractal_params['center_imag']
+                    )
+                    fractal_with_overlay = add_sanskrit_overlay(
+                        fractal, st.session_state.current_mantra_idx, st.session_state.current_colormap
+                    )
+                    st.session_state.current_fractal = fractal_with_overlay
+            st.rerun()
     
     with nav_col3:
         if st.button("⬆️ Move Up"):
             st.session_state.zoom_history.append(st.session_state.fractal_params.copy())
             st.session_state.fractal_params['center_imag'] += 0.1 / st.session_state.fractal_params['zoom']
-            if auto_mode:
-                st.rerun()
+            if st.session_state.auto_mode:
+                with st.spinner("⬆️ Moving up..."):
+                    fractal = generate_fractal(
+                        fractal_type=st.session_state.current_fractal_type,
+                        width=st.session_state.fractal_params['width'], 
+                        height=st.session_state.fractal_params['height'], 
+                        max_iter=st.session_state.fractal_params['iterations'],
+                        zoom=st.session_state.fractal_params['zoom'], 
+                        center_real=st.session_state.fractal_params['center_real'], 
+                        center_imag=st.session_state.fractal_params['center_imag']
+                    )
+                    fractal_with_overlay = add_sanskrit_overlay(
+                        fractal, st.session_state.current_mantra_idx, st.session_state.current_colormap
+                    )
+                    st.session_state.current_fractal = fractal_with_overlay
+            st.rerun()
     
     with nav_col4:
         if st.button("⬇️ Move Down"):
             st.session_state.zoom_history.append(st.session_state.fractal_params.copy())
             st.session_state.fractal_params['center_imag'] -= 0.1 / st.session_state.fractal_params['zoom']
-            if auto_mode:
-                st.rerun()
+            if st.session_state.auto_mode:
+                with st.spinner("⬇️ Moving down..."):
+                    fractal = generate_fractal(
+                        fractal_type=st.session_state.current_fractal_type,
+                        width=st.session_state.fractal_params['width'], 
+                        height=st.session_state.fractal_params['height'], 
+                        max_iter=st.session_state.fractal_params['iterations'],
+                        zoom=st.session_state.fractal_params['zoom'], 
+                        center_real=st.session_state.fractal_params['center_real'], 
+                        center_imag=st.session_state.fractal_params['center_imag']
+                    )
+                    fractal_with_overlay = add_sanskrit_overlay(
+                        fractal, st.session_state.current_mantra_idx, st.session_state.current_colormap
+                    )
+                    st.session_state.current_fractal = fractal_with_overlay
+            st.rerun()
 
 with tab2:
     st.header("Audio Synthesis")
@@ -759,7 +1042,15 @@ with tab5:
     col1, col2 = st.columns(2)
     
     with col1:
-        theme_mode = st.selectbox("Theme Mode", ["Dark", "Light", "Auto"], index=0)
+        new_theme_mode = st.selectbox("Theme Mode", ["Dark", "Light", "Auto"], 
+                                     index=["Dark", "Light", "Auto"].index(st.session_state.theme_mode))
+        
+        # Apply theme change immediately
+        if new_theme_mode != st.session_state.theme_mode:
+            st.session_state.theme_mode = new_theme_mode
+            st.success(f"🎨 Switched to {new_theme_mode} mode!")
+            st.rerun()
+            
         ui_scale = st.slider("UI Scale", 0.8, 1.2, 1.0, 0.1)
         animation_speed = st.slider("Animation Speed", 0.5, 2.0, 1.0, 0.1)
     
@@ -767,6 +1058,11 @@ with tab5:
         auto_save = st.checkbox("Auto-save fractals", value=False)
         show_coordinates = st.checkbox("Show coordinates overlay", value=True)
         enable_sound = st.checkbox("Enable UI sound effects", value=False)
+        
+        # Theme preview
+        st.markdown(f"**Current Theme**: {st.session_state.theme_mode}")
+        if st.button("🔄 Refresh Theme"):
+            st.rerun()
     
     # Performance settings
     st.subheader("⚡ Performance Settings")
