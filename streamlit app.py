@@ -109,6 +109,9 @@ if 'current_audio' not in st.session_state:
 if 'locked_controls' not in st.session_state:
     st.session_state.locked_controls = False
 
+if 'auto_mode' not in st.session_state:
+    st.session_state.auto_mode = False
+
 if 'gallery' not in st.session_state:
     st.session_state.gallery = []
 
@@ -457,18 +460,56 @@ with tab1:
                     ["mandelbrot", "julia", "burning_ship", "tricorn", "newton", "phoenix"],
                     index=["mandelbrot", "julia", "burning_ship", "tricorn", "newton", "phoenix"].index(st.session_state.current_fractal_type),
                     format_func=lambda x: x.replace('_', ' ').title())
-                zoom = st.slider("Zoom Level", 0.1, 500.0, st.session_state.fractal_params['zoom'], 0.1)
-                center_real = st.slider("Center (Real)", -2.0, 2.0, st.session_state.fractal_params['center_real'], 0.001)
-                iterations = st.slider("Iterations", 50, 500, st.session_state.fractal_params['iterations'], 10)
+                
+                # Zoom with both slider and manual input
+                st.write("**Zoom Level**")
+                zoom_col1, zoom_col2 = st.columns([3, 1])
+                with zoom_col1:
+                    zoom = st.slider("Zoom", 0.1, 500.0, st.session_state.fractal_params['zoom'], 0.1, label_visibility="collapsed")
+                with zoom_col2:
+                    zoom_manual = st.number_input("Zoom", value=st.session_state.fractal_params['zoom'], min_value=0.1, max_value=500.0, step=0.1, format="%.3f", label_visibility="collapsed")
+                zoom = zoom_manual if zoom_manual != st.session_state.fractal_params['zoom'] else zoom
+                
+                # Center Real with both slider and manual input
+                st.write("**Center (Real Part)**")
+                real_col1, real_col2 = st.columns([3, 1])
+                with real_col1:
+                    center_real = st.slider("Real", -2.0, 2.0, st.session_state.fractal_params['center_real'], 0.001, label_visibility="collapsed")
+                with real_col2:
+                    real_manual = st.number_input("Real", value=st.session_state.fractal_params['center_real'], min_value=-2.0, max_value=2.0, step=0.001, format="%.6f", label_visibility="collapsed")
+                center_real = real_manual if real_manual != st.session_state.fractal_params['center_real'] else center_real
+                
+                # Iterations with both slider and manual input
+                st.write("**Iterations**")
+                iter_col1, iter_col2 = st.columns([3, 1])
+                with iter_col1:
+                    iterations = st.slider("Iterations", 50, 500, st.session_state.fractal_params['iterations'], 10, label_visibility="collapsed")
+                with iter_col2:
+                    iter_manual = st.number_input("Iterations", value=st.session_state.fractal_params['iterations'], min_value=50, max_value=500, step=10, label_visibility="collapsed")
+                iterations = iter_manual if iter_manual != st.session_state.fractal_params['iterations'] else iterations
             
             with col2:
-                center_imag = st.slider("Center (Imaginary)", -2.0, 2.0, st.session_state.fractal_params['center_imag'], 0.001)
+                # Center Imaginary with both slider and manual input
+                st.write("**Center (Imaginary Part)**")
+                imag_col1, imag_col2 = st.columns([3, 1])
+                with imag_col1:
+                    center_imag = st.slider("Imaginary", -2.0, 2.0, st.session_state.fractal_params['center_imag'], 0.001, label_visibility="collapsed")
+                with imag_col2:
+                    imag_manual = st.number_input("Imaginary", value=st.session_state.fractal_params['center_imag'], min_value=-2.0, max_value=2.0, step=0.001, format="%.6f", label_visibility="collapsed")
+                center_imag = imag_manual if imag_manual != st.session_state.fractal_params['center_imag'] else center_imag
+                
                 resolution = st.selectbox("Resolution", ["400x300", "600x450", "800x600", "1024x768"], index=1)
                 colormap = st.selectbox("Color Scheme", ["hot", "viridis", "plasma", "magma", "inferno", "cool", "spring", "winter", "autumn"], 
                                       index=["hot", "viridis", "plasma", "magma", "inferno", "cool", "spring", "winter", "autumn"].index(st.session_state.current_colormap))
                 mantra_idx = st.selectbox("Sanskrit Overlay", range(len(SANSKRIT_MANTRAS)), 
                                         index=st.session_state.current_mantra_idx,
                                         format_func=lambda x: SANSKRIT_MANTRAS[x][1])
+                
+                # Julia set parameter (only show for Julia type)
+                if fractal_type == "julia":
+                    st.markdown("**Julia Set Parameters:**")
+                    julia_real = st.number_input("Julia C (Real)", value=-0.7, min_value=-2.0, max_value=2.0, step=0.01, format="%.6f")
+                    julia_imag = st.number_input("Julia C (Imag)", value=0.27015, min_value=-2.0, max_value=2.0, step=0.01, format="%.6f")
                 
             # Parse resolution
             width, height = map(int, resolution.split('x'))
@@ -568,6 +609,231 @@ with tab2:
         st.info("Click 'Generate Audio' to create sound")
 
 with tab3:
+    st.header("Animation Generator")
+    
+    # Animation controls
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.subheader("Animation Settings")
+        anim_type = st.selectbox("Animation Type", 
+            ["zoom_in", "zoom_out", "rotate_center", "parameter_sweep"],
+            format_func=lambda x: x.replace('_', ' ').title())
+        
+        frames = st.slider("Number of Frames", 10, 100, 30)
+        frame_rate = st.slider("Frame Rate (FPS)", 1, 30, 10)
+        
+        # Animation-specific parameters
+        if anim_type in ["zoom_in", "zoom_out"]:
+            zoom_factor = st.slider("Zoom Factor", 1.1, 10.0, 2.0)
+        elif anim_type == "rotate_center":
+            rotation_angle = st.slider("Rotation Angle (degrees)", 30, 360, 180)
+        elif anim_type == "parameter_sweep":
+            param_to_sweep = st.selectbox("Parameter to Sweep", ["center_real", "center_imag", "iterations"])
+            sweep_range = st.slider("Sweep Range", 0.1, 2.0, 0.5)
+    
+    with col2:
+        st.subheader("Preview Settings")
+        preview_quality = st.selectbox("Preview Quality", ["Low (200x150)", "Medium (400x300)", "High (600x450)"])
+        preview_frames = st.slider("Preview Frames", 5, 20, 10)
+        
+        if st.button("🎬 Generate Animation Preview"):
+            st.info("Animation generation would start here...")
+            # Animation generation logic would go here
+    
+    st.subheader("Animation Queue")
+    if 'animation_queue' not in st.session_state:
+        st.session_state.animation_queue = []
+    
+    if st.session_state.animation_queue:
+        for i, anim in enumerate(st.session_state.animation_queue):
+            col1, col2, col3 = st.columns([3, 1, 1])
+            with col1:
+                st.write(f"**{anim['type']}** - {anim['frames']} frames @ {anim['fps']} FPS")
+            with col2:
+                if st.button("Preview", key=f"preview_{i}"):
+                    st.info("Preview would show here")
+            with col3:
+                if st.button("Delete", key=f"anim_del_{i}"):
+                    st.session_state.animation_queue.pop(i)
+                    st.rerun()
+    else:
+        st.info("No animations in queue. Create one above!")
+
+with tab4:
+    st.header("Gallery & Community")
+    
+    # Gallery section
+    if st.session_state.gallery:
+        st.subheader(f"My Fractals ({len(st.session_state.gallery)})")
+        
+        # Gallery display options
+        display_mode = st.radio("Display Mode", ["Grid", "List"], horizontal=True)
+        
+        if display_mode == "Grid":
+            # Grid layout for gallery
+            cols = st.columns(3)
+            for i, item in enumerate(st.session_state.gallery):
+                with cols[i % 3]:
+                    st.image(item['image'], width=200)
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        if st.button("Load", key=f"load_{i}"):
+                            st.session_state.fractal_params.update(item['params'])
+                            st.success("Loaded!")
+                            st.rerun()
+                    with col2:
+                        if st.button("Delete", key=f"del_{i}"):
+                            st.session_state.gallery.pop(i)
+                            st.success("Deleted!")
+                            st.rerun()
+        else:
+            # List layout for gallery
+            for i, item in enumerate(st.session_state.gallery):
+                col1, col2, col3 = st.columns([3, 1, 1])
+                with col1:
+                    st.image(item['image'], width=200)
+                with col2:
+                    if st.button("Load", key=f"load_{i}"):
+                        st.session_state.fractal_params.update(item['params'])
+                        st.success("Loaded!")
+                        st.rerun()
+                with col3:
+                    if st.button("Delete", key=f"del_{i}"):
+                        st.session_state.gallery.pop(i)
+                        st.success("Deleted!")
+                        st.rerun()
+    else:
+        st.info("No saved fractals yet. Generate and save some fractals to build your gallery!")
+    
+    # Save current fractal
+    if st.button("💾 Save Current Fractal to Gallery"):
+        if st.session_state.current_fractal is not None:
+            gallery_item = {
+                'timestamp': time.time(),
+                'params': st.session_state.fractal_params.copy(),
+                'image': st.session_state.current_fractal,
+                'fractal_type': st.session_state.current_fractal_type,
+                'colormap': st.session_state.current_colormap
+            }
+            st.session_state.gallery.append(gallery_item)
+            st.success("💾 Saved to gallery!")
+        else:
+            st.warning("Generate a fractal first")
+    
+    # Bookmark section
+    if st.session_state.bookmark_history:
+        st.subheader(f"Bookmarked Locations ({len(st.session_state.bookmark_history)})")
+        for i, bookmark in enumerate(st.session_state.bookmark_history):
+            col1, col2, col3 = st.columns([2, 1, 1])
+            with col1:
+                st.write(f"**{bookmark['name']}** - {bookmark['type'].title()}")
+                st.write(f"Real: {bookmark['params']['center_real']:.4f}, Imag: {bookmark['params']['center_imag']:.4f}, Zoom: {bookmark['params']['zoom']:.1f}x")
+            with col2:
+                if st.button("Load", key=f"bookmark_{i}"):
+                    st.session_state.fractal_params.update(bookmark['params'])
+                    st.session_state.current_fractal_type = bookmark['type']
+                    st.success("Bookmark loaded!")
+                    st.rerun()
+            with col3:
+                if st.button("Delete", key=f"bookmark_del_{i}"):
+                    st.session_state.bookmark_history.pop(i)
+                    st.success("Bookmark deleted!")
+                    st.rerun()
+    
+    # Community sharing section
+    st.subheader("Community Sharing")
+    if st.session_state.current_fractal is not None:
+        params = st.session_state.fractal_params
+        share_url = f"?type={st.session_state.current_fractal_type}&zoom={params['zoom']:.3f}&real={params['center_real']:.6f}&imag={params['center_imag']:.6f}&iter={params['iterations']}"
+        st.code(share_url, language="text")
+        st.info("📋 Copy this URL to share your fractal coordinates with others!")
+    else:
+        st.info("Generate a fractal to get a shareable URL")
+
+with tab5:
+    st.header("Settings & Performance")
+    
+    # Theme settings
+    st.subheader("🎨 Appearance Settings")
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        theme_mode = st.selectbox("Theme Mode", ["Dark", "Light", "Auto"], index=0)
+        ui_scale = st.slider("UI Scale", 0.8, 1.2, 1.0, 0.1)
+        animation_speed = st.slider("Animation Speed", 0.5, 2.0, 1.0, 0.1)
+    
+    with col2:
+        auto_save = st.checkbox("Auto-save fractals", value=False)
+        show_coordinates = st.checkbox("Show coordinates overlay", value=True)
+        enable_sound = st.checkbox("Enable UI sound effects", value=False)
+    
+    # Performance settings
+    st.subheader("⚡ Performance Settings")
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        render_quality = st.selectbox("Default Render Quality", ["Draft", "Standard", "High", "Ultra"], index=1)
+        max_iterations = st.slider("Max Iterations Limit", 100, 1000, 500, 50)
+        memory_limit = st.slider("Memory Limit (MB)", 100, 1000, 500, 50)
+    
+    with col2:
+        cache_size = st.slider("Cache Size (fractals)", 5, 50, 20, 5)
+        preview_quality = st.selectbox("Preview Quality", ["Low", "Medium", "High"], index=1)
+        parallel_processing = st.checkbox("Enable parallel processing", value=True)
+    
+    # System information
+    st.subheader("📊 System Information")
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        st.metric("Session Duration", f"{time.time() - st.session_state.start_time:.0f}s")
+        st.metric("Fractals Generated", st.session_state.performance_stats["total_fractals"])
+    
+    with col2:
+        st.metric("Controls Status", "Locked" if st.session_state.locked_controls else "Unlocked")
+        st.metric("Gallery Size", len(st.session_state.gallery))
+    
+    with col3:
+        memory_usage = len(str(st.session_state)) // 1024
+        st.metric("Memory Usage", f"{memory_usage}KB")
+        if st.session_state.performance_stats["render_times"]:
+            avg_render = np.mean(st.session_state.performance_stats["render_times"][-10:])
+            st.metric("Avg Render Time", f"{avg_render:.2f}s")
+        else:
+            st.metric("Avg Render Time", "N/A")
+    
+    # Performance graph
+    if st.session_state.performance_stats["render_times"]:
+        st.subheader("📈 Performance History")
+        st.line_chart(st.session_state.performance_stats["render_times"][-20:])
+    
+    # Reset and maintenance
+    st.subheader("🔧 Maintenance")
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        if st.button("🗑️ Clear Gallery"):
+            st.session_state.gallery = []
+            st.success("Gallery cleared!")
+    
+    with col2:
+        if st.button("📊 Reset Performance Stats"):
+            st.session_state.performance_stats = {"render_times": [], "total_fractals": 0}
+            st.success("Performance stats reset!")
+    
+    with col3:
+        if st.button("🔄 Reset All Settings"):
+            # Reset to defaults but keep current fractal
+            current_fractal = st.session_state.current_fractal
+            for key in list(st.session_state.keys()):
+                if key != 'current_fractal':
+                    del st.session_state[key]
+            st.session_state.current_fractal = current_fractal
+            st.success("Settings reset!")
+            st.rerun()
+
+with tab6:
     st.header("Gallery & Settings")
     
     # Gallery section
@@ -624,71 +890,180 @@ with tab3:
                     st.success("Bookmark deleted!")
                     st.rerun()
     
-    # System information
-    st.subheader("System Information")
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        st.metric("Session Duration", f"{time.time() - st.session_state.start_time:.0f}s")
-        st.metric("Fractals Generated", st.session_state.performance_stats["total_fractals"])
-    
-    with col2:
-        st.metric("Controls", "Locked" if st.session_state.locked_controls else "Unlocked")
-        st.metric("Memory Usage", f"{len(str(st.session_state))//1024}KB")
-
-with tab4:
+with tab6:
     st.header("Export & Download")
     
     col1, col2 = st.columns(2)
     
     with col1:
-        st.subheader("Visual Export")
+        st.subheader("🖼️ Visual Export")
         
         if st.session_state.current_fractal is not None:
-            # Convert image for download
-            img = Image.fromarray(st.session_state.current_fractal)
-            buf = io.BytesIO()
-            img.save(buf, format='PNG')
-            buf.seek(0)
+            # Export options
+            export_format = st.selectbox("Image Format", ["PNG", "JPEG", "TIFF"], index=0)
+            export_quality = st.selectbox("Export Quality", ["Current Resolution", "HD (1920x1440)", "4K (3840x2880)", "8K (7680x5760)"], index=0)
+            include_overlay = st.checkbox("Include Sanskrit overlay", value=True)
             
-            st.download_button(
-                label="💾 Download Fractal PNG",
-                data=buf.getvalue(),
-                file_name=f"aoin_fractal_{int(time.time())}.png",
-                mime="image/png"
-            )
+            # Generate export
+            if st.button("🎨 Generate Export"):
+                if export_quality == "Current Resolution":
+                    export_image = st.session_state.current_fractal
+                else:
+                    # Generate high-resolution version
+                    with st.spinner("Generating high-resolution fractal..."):
+                        if export_quality == "HD (1920x1440)":
+                            width, height = 1920, 1440
+                        elif export_quality == "4K (3840x2880)":
+                            width, height = 3840, 2880
+                        else:  # 8K
+                            width, height = 7680, 5760
+                        
+                        hd_fractal = generate_fractal(
+                            fractal_type=st.session_state.current_fractal_type,
+                            width=width, height=height,
+                            max_iter=st.session_state.fractal_params['iterations'],
+                            zoom=st.session_state.fractal_params['zoom'],
+                            center_real=st.session_state.fractal_params['center_real'],
+                            center_imag=st.session_state.fractal_params['center_imag']
+                        )
+                        
+                        if include_overlay:
+                            export_image = add_sanskrit_overlay(hd_fractal, st.session_state.current_mantra_idx, st.session_state.current_colormap)
+                        else:
+                            # Apply colormap without overlay
+                            fractal_norm = (hd_fractal - hd_fractal.min()) / (hd_fractal.max() - hd_fractal.min())
+                            cmap = plt.get_cmap(st.session_state.current_colormap)
+                            colored = cmap(fractal_norm)
+                            export_image = (colored[:, :, :3] * 255).astype(np.uint8)
+                
+                # Convert image for download
+                img = Image.fromarray(export_image)
+                buf = io.BytesIO()
+                
+                if export_format == "PNG":
+                    img.save(buf, format='PNG', optimize=True)
+                    mime_type = "image/png"
+                    file_ext = "png"
+                elif export_format == "JPEG":
+                    img = img.convert('RGB')  # JPEG doesn't support alpha
+                    img.save(buf, format='JPEG', quality=95, optimize=True)
+                    mime_type = "image/jpeg"
+                    file_ext = "jpg"
+                else:  # TIFF
+                    img.save(buf, format='TIFF', compression='lzw')
+                    mime_type = "image/tiff"
+                    file_ext = "tiff"
+                
+                buf.seek(0)
+                
+                st.download_button(
+                    label=f"💾 Download {export_format}",
+                    data=buf.getvalue(),
+                    file_name=f"aoin_fractal_{st.session_state.current_fractal_type}_{int(time.time())}.{file_ext}",
+                    mime=mime_type
+                )
+                st.success(f"Export ready! File size: ~{len(buf.getvalue())//1024}KB")
         else:
             st.info("Generate a fractal first")
     
     with col2:
-        st.subheader("Audio Export")
+        st.subheader("🎵 Audio Export")
         
         if st.session_state.current_audio is not None:
             audio_data, sample_rate = st.session_state.current_audio
-            audio_bytes = create_audio_download(audio_data, sample_rate)
+            
+            # Audio export options
+            audio_format = st.selectbox("Audio Format", ["WAV", "MP3 (simulated)"], index=0)
+            audio_quality = st.selectbox("Audio Quality", ["22kHz", "44kHz", "48kHz"], index=1)
+            
+            # Generate different quality
+            if audio_quality != "22kHz":
+                target_rate = 44100 if audio_quality == "44kHz" else 48000
+                with st.spinner("Resampling audio..."):
+                    # Simple resampling (in production, use scipy.signal.resample)
+                    ratio = target_rate / sample_rate
+                    new_length = int(len(audio_data) * ratio)
+                    resampled_audio = np.interp(np.linspace(0, len(audio_data), new_length), 
+                                              np.arange(len(audio_data)), audio_data)
+                    export_audio = resampled_audio
+                    export_sample_rate = target_rate
+            else:
+                export_audio = audio_data
+                export_sample_rate = sample_rate
+            
+            audio_bytes = create_audio_download(export_audio, export_sample_rate)
             
             st.download_button(
-                label="🎵 Download Audio WAV",
+                label=f"🎵 Download {audio_format}",
                 data=audio_bytes,
-                file_name=f"aoin_audio_{int(time.time())}.wav",
+                file_name=f"aoin_audio_{int(st.session_state.audio_params['base_freq'])}Hz_{int(time.time())}.wav",
                 mime="audio/wav"
             )
+            
+            # Audio info
+            duration = len(export_audio) / export_sample_rate
+            st.info(f"Duration: {duration:.1f}s | Sample Rate: {export_sample_rate}Hz | Size: ~{len(audio_bytes)//1024}KB")
         else:
             st.info("Generate audio first")
     
-    # Parameters export
-    st.subheader("Settings Export")
+    # Bulk export section
+    st.subheader("📦 Batch Export")
     
-    if st.button("Export Current Settings"):
-        export_data = {
-            "timestamp": time.time(),
-            "fractal_params": st.session_state.fractal_params,
-            "audio_params": st.session_state.audio_params,
-            "gallery_count": len(st.session_state.gallery),
-            "fractal_type": st.session_state.current_fractal_type,
-            "colormap": st.session_state.current_colormap,
-            "mantra_index": st.session_state.current_mantra_idx
-        }
+    if st.session_state.gallery:
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.write(f"**Gallery**: {len(st.session_state.gallery)} fractals")
+            batch_format = st.selectbox("Batch Format", ["PNG", "JPEG"], index=0, key="batch_format")
+            batch_quality = st.selectbox("Batch Quality", ["Current", "HD"], index=0, key="batch_quality")
+        
+        with col2:
+            include_metadata = st.checkbox("Include metadata files", value=True)
+            zip_download = st.checkbox("Create ZIP archive", value=True)
+        
+        if st.button("📦 Export All Fractals"):
+            st.info("Batch export would generate all gallery fractals with selected settings")
+            # In a real implementation, this would create a ZIP file with all fractals
+    else:
+        st.info("No fractals in gallery for batch export")
+    
+    # Settings export
+    st.subheader("⚙️ Settings Export")
+    
+    export_options = st.multiselect("Export Settings", 
+        ["Fractal Parameters", "Audio Parameters", "Gallery", "Bookmarks", "Performance Stats"],
+        default=["Fractal Parameters", "Audio Parameters"])
+    
+    if st.button("📋 Export Settings"):
+        export_data = {"timestamp": time.time(), "app_version": "Aoin's Fractal Studio v2.0"}
+        
+        if "Fractal Parameters" in export_options:
+            export_data["fractal_params"] = st.session_state.fractal_params
+            export_data["fractal_type"] = st.session_state.current_fractal_type
+            export_data["colormap"] = st.session_state.current_colormap
+            export_data["mantra_index"] = st.session_state.current_mantra_idx
+        
+        if "Audio Parameters" in export_options:
+            export_data["audio_params"] = st.session_state.audio_params
+        
+        if "Gallery" in export_options:
+            # Export gallery metadata only (not images)
+            gallery_metadata = []
+            for item in st.session_state.gallery:
+                metadata = {
+                    "timestamp": item["timestamp"],
+                    "params": item["params"],
+                    "fractal_type": item.get("fractal_type", "mandelbrot"),
+                    "colormap": item.get("colormap", "hot")
+                }
+                gallery_metadata.append(metadata)
+            export_data["gallery_metadata"] = gallery_metadata
+        
+        if "Bookmarks" in export_options:
+            export_data["bookmarks"] = st.session_state.bookmark_history
+        
+        if "Performance Stats" in export_options:
+            export_data["performance_stats"] = st.session_state.performance_stats
         
         json_str = json.dumps(export_data, indent=2)
         st.download_button(
@@ -697,8 +1072,10 @@ with tab4:
             file_name=f"aoin_settings_{int(time.time())}.json",
             mime="application/json"
         )
+        
+        st.success(f"Settings exported with {len(export_options)} categories!")
 
 # Footer
 st.markdown("---")
 st.markdown("**💙 Aoin's Fractal Studio** - Mathematical visualization and audio synthesis")
-st.markdown("Built with Streamlit • Mobile optimized interface")
+st.markdown("Built with Streamlit • Mobile optimized interface • Dual input controls")
