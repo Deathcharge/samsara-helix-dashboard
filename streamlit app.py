@@ -854,6 +854,331 @@ Type: {getattr(st.session_state, 'current_fractal_type', 'mandelbrot').title()}
             
             # Generate sharing text
             fractal_type = getattr(st.session_state, 'current_fractal_type', 'mandelbrot').title()
+            share_text = f"Check out this {fractal_type} fractal I created with Aoin's Fractal Studio!"
+            
+            st.text_area("Share Text:", share_text, height=100)
+            st.info("Copy the text above to share on social media!")
+    
+    # Community presets (expanded)
+    st.subheader("Community Favorites")
+    
+    community_presets = {
+        "Dragon Curve": {"center_real": -0.8, "center_imag": 0.156, "zoom": 250.0, "type": "mandelbrot"},
+        "Elephant Valley": {"center_real": 0.25, "center_imag": 0.0, "zoom": 150.0, "type": "mandelbrot"},  
+        "Seahorse Spiral": {"center_real": -0.75, "center_imag": 0.1, "zoom": 300.0, "type": "mandelbrot"},
+        "Lightning Bug": {"center_real": -1.25066, "center_imag": 0.02012, "zoom": 500.0, "type": "mandelbrot"},
+        "Mystic Julia": {"center_real": 0.0, "center_imag": 0.0, "zoom": 1.0, "type": "julia"},
+        "Burning Wings": {"center_real": -1.775, "center_imag": -0.01, "zoom": 100.0, "type": "burning_ship"}
+    }
+    
+    preset_cols = st.columns(3)
+    for i, (name, params) in enumerate(community_presets.items()):
+        col_idx = i % 3
+        with preset_cols[col_idx]:
+            if st.button(f"🌟 {name}", key=f"community_{name}"):
+                st.session_state.fractal_params.update({
+                    'center_real': params['center_real'],
+                    'center_imag': params['center_imag'], 
+                    'zoom': params['zoom']
+                })
+                st.session_state.current_fractal_type = params['type']
+                st.success(f"Loaded {name}!")
+                st.rerun()
+
+with tab5:
+    st.header("Current Parameters")
+    
+    # Performance stats
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.metric("Session Duration", f"{time.time() - st.session_state.get('start_time', time.time()):.0f}s")
+    with col2:
+        st.metric("Fractals Generated", len(st.session_state.gallery))
+    with col3:
+        memory_usage = len(str(st.session_state)) // 1024
+        st.metric("Memory Usage", f"{memory_usage}KB")
+    
+    # Display current settings
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.subheader("Fractal Settings")
+        fractal_params = st.session_state.fractal_params
+        for key, value in fractal_params.items():
+            if isinstance(value, float):
+                st.metric(key.replace('_', ' ').title(), f"{value:.3f}")
+            else:
+                st.metric(key.replace('_', ' ').title(), str(value))
+    
+    with col2:
+        st.subheader("Audio Settings")
+        audio_params = st.session_state.audio_params
+        for key, value in audio_params.items():
+            if isinstance(value, float):
+                st.metric(key.replace('_', ' ').title(), f"{value:.1f}")
+            else:
+                st.metric(key.replace('_', ' ').title(), str(value))
+    
+    # System information
+    st.subheader("System Information")
+    system_info = {
+        "Fractal Type": getattr(st.session_state, 'current_fractal_type', 'mandelbrot').title(),
+        "Color Scheme": getattr(st.session_state, 'current_colormap', 'hot'),
+        "Controls": "Locked" if st.session_state.locked_controls else "Unlocked",
+        "Auto Mode": "Enabled" if st.session_state.auto_mode else "Disabled",
+        "Theme": st.session_state.theme.title()
+    }
+    
+    for key, value in system_info.items():
+        st.text(f"{key}: {value}")
+    
+    # Reset options
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("Reset Parameters"):
+            st.session_state.fractal_params = {
+                'zoom': 1.0, 'center_real': -0.7269, 'center_imag': 0.1889,
+                'iterations': 100, 'width': 600, 'height': 450
+            }
+            st.session_state.audio_params = {
+                'base_freq': 136.1, 'harmony_freq': 432.0,
+                'duration': 10, 'sample_rate': 22050
+            }
+            st.success("Parameters reset to defaults")
+            st.rerun()
+    
+    with col2:
+        if st.button("Reset All Data"):
+            for key in list(st.session_state.keys()):
+                if key not in ['start_time']:  # Keep session start time
+                    del st.session_state[key]
+            st.success("All data reset")
+            st.rerun()
+
+with tab6:
+    st.header("Export & Download")
+    
+    # Batch export section
+    st.subheader("📦 Batch Export")
+    if st.session_state.gallery:
+        export_format = st.selectbox("Export Format", ["PNG", "ZIP Archive"])
+        
+        if st.button("📥 Export All Saved Fractals"):
+            if export_format == "ZIP Archive":
+                st.info("ZIP archive generation coming soon!")
+            else:
+                st.success(f"Individual downloads available below")
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.subheader("Visual Export")
+        
+        if st.session_state.current_fractal is not None:
+            # Convert image for download
+            img = Image.fromarray(st.session_state.current_fractal)
+            buf = io.BytesIO()
+            img.save(buf, format='PNG')
+            buf.seek(0)
+            
+            # Filename with fractal info
+            fractal_type = getattr(st.session_state, 'current_fractal_type', 'mandelbrot')
+            timestamp = int(time.time())
+            filename = f"aoin_{fractal_type}_{timestamp}.png"
+            
+            st.download_button(
+                label="💾 Download Current Fractal",
+                data=buf.getvalue(),
+                file_name=filename,
+                mime="image/png"
+            )
+            
+            # High resolution option
+            if st.checkbox("🔍 High Resolution Export (1920x1440)"):
+                if st.button("Generate HD Version"):
+                    with st.spinner("Generating high resolution fractal..."):
+                        hd_fractal = generate_fractal(
+                            fractal_type=getattr(st.session_state, 'current_fractal_type', 'mandelbrot'),
+                            width=1920, height=1440, 
+                            max_iter=st.session_state.fractal_params['iterations'],
+                            zoom=st.session_state.fractal_params['zoom'],
+                            center_real=st.session_state.fractal_params['center_real'],
+                            center_imag=st.session_state.fractal_params['center_imag'],
+                            julia_c=getattr(st.session_state, 'julia_c', -0.7 + 0.27015j)
+                        )
+                        
+                        hd_with_overlay = add_sanskrit_overlay(
+                            hd_fractal, 
+                            getattr(st.session_state, 'current_mantra_idx', 0),
+                            getattr(st.session_state, 'current_colormap', 'hot')
+                        )
+                        
+                        hd_img = Image.fromarray(hd_with_overlay)
+                        hd_buf = io.BytesIO()
+                        hd_img.save(hd_buf, format='PNG')
+                        hd_buf.seek(0)
+                        
+                        st.download_button(
+                            label="📸 Download HD Fractal",
+                            data=hd_buf.getvalue(),
+                            file_name=f"aoin_HD_{fractal_type}_{timestamp}.png",
+                            mime="image/png"
+                        )
+        else:
+            st.info("Generate a fractal first")
+    
+    with col2:
+        st.subheader("Audio Export")
+        
+        if st.session_state.current_audio is not None:
+            audio_data, sample_rate = st.session_state.current_audio
+            audio_bytes = create_audio_download(audio_data, sample_rate)
+            
+            st.download_button(
+                label="🎵 Download Audio WAV",
+                data=audio_bytes,
+                file_name=f"aoin_audio_{int(time.time())}.wav",
+                mime="audio/wav"
+            )
+            
+            # Audio format options
+            st.write("**Audio Info:**")
+            st.write(f"- Sample Rate: {sample_rate} Hz")
+            st.write(f"- Duration: {len(audio_data)/sample_rate:.1f} seconds")
+            st.write(f"- File Size: ~{len(audio_bytes)//1024} KB")
+        else:
+            st.info("Generate audio first")
+    
+    # Animation export (if frames exist)
+    if st.session_state.animation_frames:
+        st.subheader("🎬 Animation Export")
+        st.write(f"**Animation Ready:** {len(st.session_state.animation_frames)} frames")
+        st.info("💡 Advanced GIF export coming soon! For now, use individual frame downloads.")
+    
+    # Data export section
+    st.subheader("📊 Data Export")
+    
+    # Parameters export
+    if st.button("⚙️ Export Current Settings"):
+        export_data = {
+            "timestamp": time.time(),
+            "fractal_params": st.session_state.fractal_params,
+            "audio_params": st.session_state.audio_params,
+            "fractal_type": getattr(st.session_state, 'current_fractal_type', 'mandelbrot'),
+            "colormap": getattr(st.session_state, 'current_colormap', 'hot'),
+            "app_version": "Aoin Studio v2.0",
+            "gallery_count": len(st.session_state.gallery)
+        }
+        
+        json_str = json.dumps(export_data, indent=2)
+        st.download_button(
+            label="💾 Download Settings JSON",
+            data=json_str,
+            file_name=f"aoin_settings_{int(time.time())}.json",
+            mime="application/json"
+        )
+    
+    # Gallery export
+    if st.session_state.gallery:
+        if st.button("🖼️ Export Gallery Data"):
+            gallery_data = {
+                "exported_at": time.time(),
+                "total_fractals": len(st.session_state.gallery),
+                "fractals": [
+                    {
+                        "timestamp": item['timestamp'],
+                        "params": item['params'],
+                        "type": item['type']
+                    } for item in st.session_state.gallery
+                ]
+            }
+            
+            gallery_json = json.dumps(gallery_data, indent=2)
+            st.download_button(
+                label="📋 Download Gallery JSON",
+                data=gallery_json,
+                file_name=f"aoin_gallery_{int(time.time())}.json",
+                mime="application/json"
+            )
+
+with tab4:
+    st.header("Gallery & Community")
+    
+    # Gallery section
+    if st.session_state.gallery:
+        st.subheader(f"Your Saved Fractals ({len(st.session_state.gallery)})")
+        
+        # Display gallery in grid
+        cols_per_row = 3
+        for i in range(0, len(st.session_state.gallery), cols_per_row):
+            cols = st.columns(cols_per_row)
+            for j, col in enumerate(cols):
+                idx = i + j
+                if idx < len(st.session_state.gallery):
+                    item = st.session_state.gallery[idx]
+                    with col:
+                        st.image(item['image'], use_container_width=True)
+                        st.caption(f"Type: {item['type'].title()}")
+                        st.caption(f"Zoom: {item['params']['zoom']:.1f}x")
+                        
+                        # Action buttons
+                        if st.button(f"Load", key=f"load_{idx}"):
+                            st.session_state.fractal_params.update(item['params'])
+                            st.session_state.current_fractal_type = item['type']
+                            st.success("Parameters loaded!")
+                            st.rerun()
+                        
+                        if st.button(f"Delete", key=f"del_{idx}"):
+                            st.session_state.gallery.pop(idx)
+                            st.success("Deleted from gallery")
+                            st.rerun()
+        
+        # Clear gallery option
+        if st.button("🗑️ Clear Gallery"):
+            st.session_state.gallery = []
+            st.success("Gallery cleared")
+            st.rerun()
+    else:
+        st.info("No saved fractals yet. Generate and save some fractals to build your gallery!")
+    
+    # Social sharing section
+    st.subheader("Share Your Discoveries")
+    
+    if st.session_state.current_fractal is not None:
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.markdown("**Current Fractal Coordinates:**")
+            params = st.session_state.fractal_params
+            coordinate_text = f"""
+Real: {params['center_real']:.6f}
+Imaginary: {params['center_imag']:.6f}  
+Zoom: {params['zoom']:.3f}x
+Iterations: {params['iterations']}
+Type: {getattr(st.session_state, 'current_fractal_type', 'mandelbrot').title()}
+"""
+            st.code(coordinate_text)
+            
+            # Copy-pasteable coordinates
+            coords_json = json.dumps({
+                'real': params['center_real'],
+                'imag': params['center_imag'],
+                'zoom': params['zoom'],
+                'type': getattr(st.session_state, 'current_fractal_type', 'mandelbrot')
+            }, indent=2)
+            
+            st.download_button(
+                "📋 Copy Coordinates",
+                coords_json,
+                f"fractal_coords_{int(time.time())}.json",
+                "application/json"
+            )
+        
+        with col2:
+            st.markdown("**Social Media Sharing:**")
+            
+            # Generate sharing text
+            fractal_type = getattr(st.session_state, 'current_fractal_type', 'mandelbrot').title()
             share_text = f"Check out this {fractal_type} fractal I created with Aoin's Fractal Studio! 🎨✨"
             
             # Social media links (these would open in new tabs)
