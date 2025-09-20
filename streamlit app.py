@@ -93,6 +93,15 @@ if 'current_fractal' not in st.session_state:
 if 'current_audio' not in st.session_state:
     st.session_state.current_audio = None
 
+if 'locked_controls' not in st.session_state:
+    st.session_state.locked_controls = False
+
+if 'animation_frames' not in st.session_state:
+    st.session_state.animation_frames = []
+
+if 'auto_mode' not in st.session_state:
+    st.session_state.auto_mode = False
+
 # Sanskrit mantras for overlay
 SANSKRIT_MANTRAS = [
     ("अहं ब्रह्मास्मि", "Aham Brahmasmi", "I am Brahman"),
