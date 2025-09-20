@@ -60,6 +60,36 @@ st.markdown("""
         margin-bottom: 1rem;
     }
     
+    .preset-button {
+        display: inline-block;
+        background: linear-gradient(45deg, #4A90E2, #7B68EE);
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 10px;
+        margin: 0.25rem;
+        cursor: pointer;
+        border: none;
+        font-size: 0.9rem;
+    }
+    
+    .lock-indicator {
+        background: #ff6b6b;
+        color: white;
+        padding: 0.25rem 0.5rem;
+        border-radius: 5px;
+        font-size: 0.8rem;
+        margin: 0.25rem;
+    }
+    
+    .unlock-indicator {
+        background: #51cf66;
+        color: white;
+        padding: 0.25rem 0.5rem;
+        border-radius: 5px;
+        font-size: 0.8rem;
+        margin: 0.25rem;
+    }
+    
     @media (max-width: 768px) {
         .stSlider { margin: 0.25rem 0; }
         .metric-container { padding: 0.5rem; }
@@ -255,71 +285,273 @@ def create_audio_download(audio_data, sample_rate):
 st.markdown('<div class="aoin-header"><h1>💙 Aoin\'s Fractal Studio • अहं ब्रह्मास्मि 💙</h1><p>Ethereal AI • Infinite Patterns • Celestial Frequencies</p><p style="font-size:0.9em; opacity:0.8;">तत्त्वमसि • नेति नेति • सर्वं खल्विदं ब्रह्म</p></div>', unsafe_allow_html=True)
 st.markdown('<p class="aoin-subtitle">✨ Where mathematics meets digital consciousness ✨</p>', unsafe_allow_html=True)
 
+with tab3:
+    st.header("Animation Generator")
+    
+    # Animation controls
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.subheader("Animation Settings")
+        anim_type = st.selectbox("Animation Type", 
+            ["zoom_in", "zoom_out", "rotate_center", "parameter_sweep"],
+            format_func=lambda x: x.replace('_', ' ').title())
+        
+        frames = st.slider("Number of Frames", 10, 100, 30)
+        frame_rate = st.slider("Frame Rate (FPS)", 1, 30, 10)
+        
+        # Animation-specific parameters
+        if anim_type in ["zoom_in", "zoom_out"]:
+            zoom_factor = st.slider("Zoom Factor", 1.1, 10.0, 2.0)
+        elif anim_type == "rotate_center":
+            rotation_steps = st.slider("Rotation Steps", 4, 36, 12)
+        elif anim_type == "parameter_sweep":
+            sweep_param = st.selectbox("Parameter to Sweep", ["iterations", "julia_real", "julia_imag"])
+    
+    with col2:
+        st.subheader("Preview Settings")
+        preview_size = st.selectbox("Preview Resolution", ["200x150", "300x225", "400x300"], index=1)
+        preview_colormap = st.selectbox("Animation Colormap", ["hot", "viridis", "plasma", "magma"], index=0)
+        
+        # Progress indicator
+        if 'animation_progress' in st.session_state:
+            st.progress(st.session_state.animation_progress)
+    
+    # Generate animation
+    if st.button("🎬 Generate Animation"):
+        st.session_state.animation_frames = []
+        progress_bar = st.progress(0)
+        status_text = st.empty()
+        
+        # Parse preview size
+        anim_width, anim_height = map(int, preview_size.split('x'))
+        
+        with st.spinner("Creating animation frames..."):
+            for i in range(frames):
+                # Update progress
+                progress = i / frames
+                progress_bar.progress(progress)
+                status_text.text(f"Generating frame {i+1}/{frames}")
+                
+                # Calculate frame parameters based on animation type
+                if anim_type == "zoom_in":
+                    current_zoom = st.session_state.fractal_params['zoom'] * (zoom_factor ** (i / frames))
+                elif anim_type == "zoom_out":
+                    current_zoom = st.session_state.fractal_params['zoom'] / (zoom_factor ** (i / frames))
+                elif anim_type == "rotate_center":
+                    angle = 2 * np.pi * i / frames
+                    offset = 0.1 * np.exp(1j * angle)
+                    current_zoom = st.session_state.fractal_params['zoom']
+                    center_offset = complex(st.session_state.fractal_params['center_real'], 
+                                          st.session_state.fractal_params['center_imag']) + offset
+                else:  # parameter_sweep
+                    current_zoom = st.session_state.fractal_params['zoom']
+                    center_offset = complex(st.session_state.fractal_params['center_real'], 
+                                          st.session_state.fractal_params['center_imag'])
+                
+                # Generate frame
+                if anim_type in ["zoom_in", "zoom_out"]:
+                    fractal = generate_fractal(
+                        fractal_type="mandelbrot",
+                        width=anim_width, height=anim_height, max_iter=100,
+                        zoom=current_zoom,
+                        center_real=st.session_state.fractal_params['center_real'],
+                        center_imag=st.session_state.fractal_params['center_imag']
+                    )
+                elif anim_type == "rotate_center":
+                    fractal = generate_fractal(
+                        fractal_type="mandelbrot",
+                        width=anim_width, height=anim_height, max_iter=100,
+                        zoom=current_zoom,
+                        center_real=center_offset.real,
+                        center_imag=center_offset.imag
+                    )
+                else:  # parameter_sweep
+                    if sweep_param == "iterations":
+                        iter_val = 50 + int(150 * i / frames)
+                        fractal = generate_fractal(
+                            fractal_type="mandelbrot",
+                            width=anim_width, height=anim_height, max_iter=iter_val,
+                            zoom=current_zoom,
+                            center_real=st.session_state.fractal_params['center_real'],
+                            center_imag=st.session_state.fractal_params['center_imag']
+                        )
+                
+                # Convert to image
+                fractal_norm = (fractal - fractal.min()) / (fractal.max() - fractal.min())
+                cmap = plt.get_cmap(preview_colormap)
+                colored = cmap(fractal_norm)
+                frame_array = (colored[:, :, :3] * 255).astype(np.uint8)
+                frame_image = Image.fromarray(frame_array)
+                
+                st.session_state.animation_frames.append(frame_array)
+        
+        progress_bar.progress(1.0)
+        status_text.text(f"Animation complete! {frames} frames generated.")
+        st.success(f"Generated {frames} frames for animation")
+    
+    # Display animation preview
+    if st.session_state.animation_frames:
+        st.subheader("Animation Preview")
+        
+        # Simple frame selector for preview
+        frame_idx = st.slider("Preview Frame", 0, len(st.session_state.animation_frames)-1, 0)
+        st.image(st.session_state.animation_frames[frame_idx], caption=f"Frame {frame_idx+1}/{len(st.session_state.animation_frames)}")
+        
+        # Animation stats
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.metric("Total Frames", len(st.session_state.animation_frames))
+        with col2:
+            st.metric("Duration", f"{len(st.session_state.animation_frames)/frame_rate:.1f}s")
+        with col3:
+            st.metric("Frame Rate", f"{frame_rate} FPS")
+
 # Create tabs
-tab1, tab2, tab3, tab4 = st.tabs(["🎨 Fractal", "🎵 Audio", "📊 Parameters", "📤 Export"])
+tab1, tab2, tab3, tab4, tab5 = st.tabs(["🎨 Fractal", "🎵 Audio", "🎬 Animation", "📊 Parameters", "📤 Export"])
 
 with tab1:
     st.header("Fractal Generator")
     
-    # Parameter controls
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        fractal_type = st.selectbox("Fractal Type", 
-            ["mandelbrot", "julia", "burning_ship", "tricorn"],
-            format_func=lambda x: x.replace('_', ' ').title())
-        zoom = st.slider("Zoom Level", 0.1, 50.0, st.session_state.fractal_params['zoom'], 0.1)
-        center_real = st.slider("Center (Real)", -2.0, 2.0, st.session_state.fractal_params['center_real'], 0.001)
-        iterations = st.slider("Iterations", 50, 300, st.session_state.fractal_params['iterations'], 10)
-    
-    with col2:
-        center_imag = st.slider("Center (Imaginary)", -2.0, 2.0, st.session_state.fractal_params['center_imag'], 0.001)
-        resolution = st.selectbox("Resolution", ["400x300", "600x450", "800x600"], index=1)
-        colormap = st.selectbox("Color Scheme", ["hot", "viridis", "plasma", "magma", "inferno"])
-        mantra_idx = st.selectbox("Sanskrit Overlay", range(len(SANSKRIT_MANTRAS)), 
-                                format_func=lambda x: SANSKRIT_MANTRAS[x][1])
+    # Control lock toggle
+    col_lock1, col_lock2, col_lock3 = st.columns([1, 2, 1])
+    with col_lock2:
+        if st.button("🔒 Lock Controls" if not st.session_state.locked_controls else "🔓 Unlock Controls"):
+            st.session_state.locked_controls = not st.session_state.locked_controls
         
-        # Julia set parameter (only show for Julia type)
-        if fractal_type == "julia":
-            julia_real = st.slider("Julia C (Real)", -2.0, 2.0, -0.7, 0.01)
-            julia_imag = st.slider("Julia C (Imag)", -2.0, 2.0, 0.27015, 0.01)
-            julia_c = julia_real + julia_imag * 1j
+        if st.session_state.locked_controls:
+            st.markdown('<div class="lock-indicator">🔒 Controls Locked</div>', unsafe_allow_html=True)
         else:
-            julia_c = -0.7 + 0.27015j
+            st.markdown('<div class="unlock-indicator">🔓 Controls Unlocked</div>', unsafe_allow_html=True)
     
-    # Parse resolution
-    width, height = map(int, resolution.split('x'))
+    # Fractal presets
+    st.subheader("Quick Presets")
+    preset_cols = st.columns(4)
     
-    # Update session state
-    st.session_state.fractal_params.update({
-        'zoom': zoom, 'center_real': center_real, 'center_imag': center_imag,
-        'iterations': iterations, 'width': width, 'height': height
-    })
+    presets = {
+        "Classic": {"center_real": -0.7269, "center_imag": 0.1889, "zoom": 1.0},
+        "Seahorse": {"center_real": -0.75, "center_imag": 0.1, "zoom": 100.0},
+        "Lightning": {"center_real": -1.775, "center_imag": 0.0, "zoom": 50.0},
+        "Spiral": {"center_real": 0.285, "center_imag": 0.01, "zoom": 200.0}
+    }
     
-    # Generate fractal
-    if st.button("Generate Fractal", key="generate_fractal") or st.checkbox("Auto-generate"):
+    for i, (name, params) in enumerate(presets.items()):
+        with preset_cols[i]:
+            if st.button(f"✨ {name}", key=f"preset_{name}"):
+                st.session_state.fractal_params.update(params)
+                st.rerun()
+    
+    # Display current fractal first
+    if st.session_state.current_fractal is not None:
+        # Add click-to-zoom functionality info
+        st.image(st.session_state.current_fractal, use_container_width=True, 
+                caption="💡 Tip: Use the zoom slider and presets to explore different regions")
+        
+        # Show current info
+        st.info(f"**Type:** {getattr(st.session_state, 'current_fractal_type', 'Mandelbrot').replace('_', ' ').title()} | "
+               f"**Zoom:** {st.session_state.fractal_params['zoom']:.1f}x | "
+               f"**Center:** ({st.session_state.fractal_params['center_real']:.3f}, {st.session_state.fractal_params['center_imag']:.3f})")
+    
+    # Generate button (prominent placement)
+    if st.button("🎨 Generate Fractal", key="generate_fractal", help="Create new fractal with current settings"):
         with st.spinner("Generating fractal..."):
             fractal = generate_fractal(
-                fractal_type=fractal_type,
-                width=width, height=height, max_iter=iterations,
-                zoom=zoom, center_real=center_real, center_imag=center_imag,
-                julia_c=julia_c
+                fractal_type=getattr(st.session_state, 'current_fractal_type', 'mandelbrot'),
+                width=st.session_state.fractal_params['width'], 
+                height=st.session_state.fractal_params['height'], 
+                max_iter=st.session_state.fractal_params['iterations'],
+                zoom=st.session_state.fractal_params['zoom'], 
+                center_real=st.session_state.fractal_params['center_real'], 
+                center_imag=st.session_state.fractal_params['center_imag'],
+                julia_c=getattr(st.session_state, 'julia_c', -0.7 + 0.27015j)
             )
             
             # Add Sanskrit overlay
-            fractal_with_overlay = add_sanskrit_overlay(fractal, mantra_idx, colormap)
+            fractal_with_overlay = add_sanskrit_overlay(
+                fractal, 
+                getattr(st.session_state, 'current_mantra_idx', 0), 
+                getattr(st.session_state, 'current_colormap', 'hot')
+            )
             st.session_state.current_fractal = fractal_with_overlay
+            st.rerun()
     
-    # Display fractal
+    # Auto-generate toggle
+    auto_generate = st.checkbox("⚡ Auto-generate on parameter change", 
+                               value=st.session_state.auto_mode,
+                               help="Automatically create new fractal when sliders change")
+    st.session_state.auto_mode = auto_generate
+    
+    # Parameters section (collapsed by default when locked)
+    with st.expander("🎛️ Fractal Parameters", expanded=not st.session_state.locked_controls):
+        if not st.session_state.locked_controls:
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                fractal_type = st.selectbox("Fractal Type", 
+                    ["mandelbrot", "julia", "burning_ship", "tricorn"],
+                    format_func=lambda x: x.replace('_', ' ').title(),
+                    help="Choose the mathematical formula to visualize")
+                zoom = st.slider("Zoom Level", 0.1, 500.0, st.session_state.fractal_params['zoom'], 0.1,
+                               help="Higher values zoom deeper into the fractal")
+                center_real = st.slider("Center (Real)", -2.0, 2.0, st.session_state.fractal_params['center_real'], 0.001,
+                                      help="Horizontal position in the complex plane")
+                iterations = st.slider("Iterations", 50, 500, st.session_state.fractal_params['iterations'], 10,
+                                     help="Higher values increase detail but take longer to compute")
+            
+            with col2:
+                center_imag = st.slider("Center (Imaginary)", -2.0, 2.0, st.session_state.fractal_params['center_imag'], 0.001,
+                                      help="Vertical position in the complex plane")
+                resolution = st.selectbox("Resolution", ["400x300", "600x450", "800x600", "1024x768"], index=1,
+                                         help="Higher resolution creates larger, more detailed images")
+                colormap = st.selectbox("Color Scheme", ["hot", "viridis", "plasma", "magma", "inferno", "cool", "spring"],
+                                      help="Color palette for the fractal visualization")
+                mantra_idx = st.selectbox("Sanskrit Overlay", range(len(SANSKRIT_MANTRAS)), 
+                                        format_func=lambda x: SANSKRIT_MANTRAS[x][1],
+                                        help="Traditional mantra to overlay on the image")
+                
+                # Julia set parameter (only show for Julia type)
+                if fractal_type == "julia":
+                    st.markdown("**Julia Set Parameters:**")
+                    julia_real = st.slider("Julia C (Real)", -2.0, 2.0, -0.7, 0.01)
+                    julia_imag = st.slider("Julia C (Imag)", -2.0, 2.0, 0.27015, 0.01)
+                    julia_c = julia_real + julia_imag * 1j
+                    st.session_state.julia_c = julia_c
+                else:
+                    julia_c = -0.7 + 0.27015j
+                    st.session_state.julia_c = julia_c
+            
+            # Parse resolution
+            width, height = map(int, resolution.split('x'))
+            
+            # Update session state
+            st.session_state.fractal_params.update({
+                'zoom': zoom, 'center_real': center_real, 'center_imag': center_imag,
+                'iterations': iterations, 'width': width, 'height': height
+            })
+            st.session_state.current_fractal_type = fractal_type
+            st.session_state.current_colormap = colormap
+            st.session_state.current_mantra_idx = mantra_idx
+            
+            # Auto-generate if enabled
+            if auto_generate:
+                with st.spinner("Auto-generating..."):
+                    fractal = generate_fractal(
+                        fractal_type=fractal_type,
+                        width=width, height=height, max_iter=iterations,
+                        zoom=zoom, center_real=center_real, center_imag=center_imag,
+                        julia_c=julia_c
+                    )
+                    fractal_with_overlay = add_sanskrit_overlay(fractal, mantra_idx, colormap)
+                    st.session_state.current_fractal = fractal_with_overlay
+        else:
+            st.info("🔒 Controls are locked to prevent accidental changes. Click unlock to modify parameters.")
+    
+    # Show current mantra and fractal info
     if st.session_state.current_fractal is not None:
-        st.image(st.session_state.current_fractal, use_column_width=True)
-        
-        # Show current mantra and fractal info
-        devanagari, transliteration, meaning = SANSKRIT_MANTRAS[mantra_idx]
+        devanagari, transliteration, meaning = SANSKRIT_MANTRAS[getattr(st.session_state, 'current_mantra_idx', 0)]
         st.markdown(f"**Current Mantra:** {devanagari} ({transliteration}) - *{meaning}*")
-        st.markdown(f"**Fractal Type:** {fractal_type.replace('_', ' ').title()}")
     else:
-        st.info("Click 'Generate Fractal' to create visualization")
+        st.info("👆 Click 'Generate Fractal' to create your first visualization")
 
 with tab2:
     st.header("Audio Synthesis")
