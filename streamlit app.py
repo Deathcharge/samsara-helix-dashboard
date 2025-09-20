@@ -598,7 +598,7 @@ with tab2:
     else:
         st.info("Click 'Generate Audio' to create sound")
 
-with tab3:
+with tab4:
     st.header("Current Parameters")
     
     # Display current settings
@@ -633,7 +633,7 @@ with tab3:
             'duration': 10, 'sample_rate': 22050
         }
         st.success("Parameters reset to defaults")
-        st.experimental_rerun()
+        st.rerun()
 
 with tab4:
     st.header("Export & Download")
