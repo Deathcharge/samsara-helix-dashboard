@@ -1,200 +1,93 @@
-# Samsara Helix Discord Bot
+# helix-discord-bot
 
-A comprehensive, production-ready Discord bot powered by the Helix AI ecosystem. Features multi-agent coordination, advanced commands, real-time monitoring, and seamless integration with Helix's autonomous systems.
+Discord bot integration for Helix ecosystem
 
-## Overview
+## 🎯 Overview
 
-The Helix Discord Bot brings the power of multi-agent AI orchestration to Discord servers. With 50+ commands spanning admin, content generation, advanced AI features, performance monitoring, and more, it transforms Discord into a hub for AI-powered collaboration and automation.
+This repository is part of the [Helix Collective](https://github.com/Deathcharge/helix-platform), a comprehensive ecosystem for building intelligent, multi-agent systems with consciousness frameworks and advanced LLM integration.
 
-## Key Features
+## 🚀 Quick Start
 
-- **Multi-Agent Coordination** - Agents working together on Discord workflows
-- **50+ Advanced Commands** - Organized across 15+ command modules
-- **Real-time Monitoring** - Performance tracking and system optimization
-- **Content Generation** - Images, text, and creative content
-- **Admin & Moderation** - Server management and moderation tools
-- **Voice Features** - Audio integration and voice commands
-- **Memory Management** - Persistent context and conversation history
-- **Webhook Integration** - Seamless Discord integration
-- **Portal Deployment** - Deploy Helix portals directly from Discord
-- **Fun Minigames** - Interactive entertainment and engagement
+### Installation
 
-## Architecture
-
-```
-discord_bot_src/
-├── agent_bot_factory.py              # Bot creation and initialization
-├── agent_memory_service.py           # Memory management for agents
-├── agent_performance_commands.py     # Performance monitoring
-├── discord_bot_helix.py              # Main bot implementation
-├── discord_agent_swarm_integration.py # Agent coordination
-├── discord_multi_agent_enhancements.py # Multi-agent features
-├── commands/                         # 15 command modules
-│   ├── admin_commands.py
-│   ├── advanced_commands.py
-│   ├── content_commands.py
-│   ├── image_commands.py
-│   ├── moderation_commands.py
-│   ├── monitoring_commands.py
-│   ├── optimization_commands.py
-│   ├── voice_commands.py
-│   └── ...more
-└── ...additional modules
-```
-
-## Installation
-
-### Prerequisites
-- Python 3.9+
-- Discord.py library
-- Samsara Samsara Helix ecosystem components
-
-### Setup
-
-```bash
-# Clone the repository
+\`\`\`bash
 git clone https://github.com/Deathcharge/helix-discord-bot.git
 cd helix-discord-bot
-
-# Install dependencies
 pip install -r requirements.txt
+\`\`\`
 
-# Configure your bot token
-export DISCORD_BOT_TOKEN="your_token_here"
+### Basic Usage
 
-# Run the bot
-python discord_bot_src/discord_bot_helix.py
-```
+See the [examples/](examples/) directory for working examples and integration patterns.
 
-## Command Categories
+## 📚 Documentation
 
-### Admin Commands
-Administrative functions for server management and configuration.
+- **[Architecture](docs/ARCHITECTURE.md)** - System design and components
+- **[API Reference](docs/API.md)** - Complete API documentation
+- **[Integration Guide](docs/INTEGRATION.md)** - How to integrate with other Helix repos
+- **[Deployment](docs/DEPLOYMENT.md)** - Production deployment guide
+- **[Contributing](CONTRIBUTING.md)** - How to contribute
 
-### Advanced Commands
-Leverage advanced AI capabilities for complex tasks.
+## 🔗 Related Repositories
 
-### Content Commands
-Generate and manage content (images, text, creative).
+- **[helix-platform](https://github.com/Deathcharge/helix-platform)** - Central hub and integration guide
+- **[helix-unified](https://github.com/Deathcharge/helix-unified)** - Main unified codebase
+- **[helix-core](https://github.com/Deathcharge/helix-core)** - Core utilities and LLM integration
 
-### Image Commands
-Image generation, manipulation, and analysis.
+See [HELIX_REPOSITORY_INDEX.md](https://github.com/Deathcharge/helix-platform/blob/main/HELIX_REPOSITORY_INDEX.md) for the complete ecosystem map.
 
-### Moderation Commands
-Server moderation and user management tools.
+## 🧪 Testing
 
-### Monitoring Commands
-Real-time performance monitoring and analytics.
+Run tests with pytest:
 
-### Optimization Commands
-System optimization and performance tuning.
+\`\`\`bash
+pytest tests/ -v --cov=src
+\`\`\`
 
-### Voice Commands
-Voice integration and audio features.
+## 🔄 CI/CD
 
-### Fun Minigames
-Interactive games and entertainment.
+This repository uses GitHub Actions for:
+- ✅ Automated testing (Python 3.9, 3.10, 3.11)
+- ✅ Code linting (flake8)
+- ✅ Type checking (mypy)
+- ✅ Security scanning (bandit, safety)
+- ✅ Coverage reporting (Codecov)
 
-### Portal Deployment
-Deploy Helix portals from Discord.
+See [.github/workflows/ci.yml](.github/workflows/ci.yml) for details.
 
-## Integration
+## 📋 Requirements
 
-The bot integrates seamlessly with:
-- **Helix Agent Swarm** - Multi-agent coordination
-- **Routine Engine** - Workflow automation
-- **UCF Protocol** - Consciousness metrics
-- **Helix Core** - LLM reasoning
+- Python 3.9+
+- Dependencies listed in requirements.txt
+- Development dependencies in requirements-dev.txt
 
-## Configuration
+## 🤝 Contributing
 
-Set environment variables for:
-- `DISCORD_BOT_TOKEN` - Your Discord bot token
-- `HELIX_API_KEY` - Helix API credentials
-- `HELIX_API_URL` - Helix API endpoint
+We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for:
+- Development setup
+- Code style guide
+- Testing requirements
+- Pull request process
 
-## Development
+## 📄 License
 
-### Adding New Commands
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-Create a new file in `discord_bot_src/commands/`:
+## 🆘 Support
 
-```python
-import discord
-from discord.ext import commands
+- **Issues**: Report bugs or request features via [GitHub Issues](https://github.com/Deathcharge/helix-discord-bot/issues)
+- **Discussions**: Ask questions in [GitHub Discussions](https://github.com/Deathcharge/helix-discord-bot/discussions)
+- **Documentation**: See the [docs/](docs/) directory
+- **Ecosystem**: Visit [helix-platform](https://github.com/Deathcharge/helix-platform)
 
-class MyCommands(commands.Cog):
-    def __init__(self, bot):
-        self.bot = bot
-    
-    @commands.command()
-    async def mycommand(self, ctx):
-        """My custom command"""
-        await ctx.send("Hello!")
+## 🎓 Learn More
 
-async def setup(bot):
-    await bot.add_cog(MyCommands(bot))
-```
-
-### Testing
-
-```bash
-# Run with test token
-python discord_bot_src/discord_bot_helix.py --test
-```
-
-## Performance
-
-The bot is optimized for:
-- Low latency command execution
-- Efficient memory management
-- Scalable multi-agent coordination
-- Real-time monitoring and analytics
-
-## Security
-
-- Secure token management
-- Permission-based command access
-- Rate limiting and abuse prevention
-- Encrypted credential storage
-
-## License
-
-Dual Licensed:
-- **Apache 2.0** - For open-source use
-- **Proprietary Commercial** - For enterprise deployments
-
-See LICENSE and LICENSE.PROPRIETARY for details.
-
-## Support
-
-For issues, feature requests, or contributions:
-- Open an issue on GitHub
-- Check the documentation
-- Review command examples
-
-## Contributing
-
-Contributions are welcome! Please:
-1. Fork the repository
-2. Create a feature branch
-3. Submit a pull request
-
-See CONTRIBUTING.md for guidelines.
-
-## Roadmap
-
-- [ ] Advanced scheduling system
-- [ ] Custom command builder
-- [ ] Analytics dashboard
-- [ ] Multi-server coordination
-- [ ] Advanced AI training
-- [ ] Community marketplace
-
-## Credits
-
-Built with the Samsara Samsara Samsara Helix ecosystem and powered by advanced AI coordination.
+- [Helix Collective Repository Index](https://github.com/Deathcharge/helix-platform/blob/main/HELIX_REPOSITORY_INDEX.md)
+- [Architecture Guide](https://github.com/Deathcharge/helix-platform/blob/main/docs/ARCHITECTURE.md)
+- [Integration Examples](https://github.com/Deathcharge/helix-platform/tree/main/examples)
 
 ---
 
-**Tat Tvam Asi** 🕉️ - Thou Art That
+**Status**: ✅ Production Ready  
+**Last Updated**: June 19, 2026  
+**Maintainer**: Helix Collective Contributors
