@@ -274,7 +274,7 @@ async def health_check(ctx: commands.Context) -> None:
         # Add documentation link
         embed.add_field(
             name="📚 Documentation",
-            value="[Helix Spiral Engine Guide](https://github.com/Deathcharge/helix-unified/blob/main/README.md) | Use `!update_optimization_guide` to post guide to Discord",
+            value="[Samsarix Unified guide](https://github.com/Deathcharge/samsarix-unified/blob/main/README.md) | Use `!update_optimization_guide` to post guide to Discord",
             inline=False,
         )
         embed.set_footer(text="🜂 Kael v3.4 Enhanced - Ethical monitoring active | v16.7")
@@ -516,7 +516,7 @@ async def discovery_command(ctx: commands.Context) -> None:
     embed.add_field(
         name="📚 Manifest (Static Architecture)",
         value=(
-            "```\nhttps://deathcharge.github.io/helix-unified/helix-manifest.json\n```\n"
+            "```\nhttps://github.com/Deathcharge/samsarix-field-guide#readme\n```\n"
             "→ Codex structure, 18 agents, UCF schema, Ethics Validator\n"
             "→ Static discovery via GitHub Pages"
         ),
