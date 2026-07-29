@@ -1,0 +1,82 @@
+[build-system]
+requires = ["setuptools==80.9.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "samsarix-discord-bot"
+version = "0.1.0"
+description = "A minimal Discord operator bot for bounded service health checks"
+readme = "README.md"
+requires-python = ">=3.11"
+license = "MPL-2.0"
+license-files = ["LICENSE", "LICENSING.md", "NOTICE", "TRADEMARKS.md"]
+authors = [{ name = "Samsarix LLC", email = "contact@samsarix.com" }]
+maintainers = [{ name = "Samsarix Support", email = "support@samsarix.com" }]
+keywords = ["discord", "health-check", "monitoring", "operations", "samsarix"]
+dependencies = ["discord.py==2.7.1"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Environment :: Console",
+  "Framework :: AsyncIO",
+  "Intended Audience :: System Administrators",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: System :: Monitoring",
+]
+
+[project.optional-dependencies]
+dev = [
+  "bandit==1.9.4",
+  "build==1.3.0",
+  "mypy==1.19.1",
+  "pip-audit==2.10.1",
+  "pytest==9.0.3",
+  "pytest-asyncio==1.3.0",
+  "pytest-cov==7.0.0",
+  "ruff==0.14.13",
+  "twine==7.0.0",
+]
+
+[project.scripts]
+samsarix-discord-bot = "samsarix_discord_bot.cli:main"
+
+[project.urls]
+Homepage = "https://www.samsarix.com"
+Repository = "https://github.com/Deathcharge/helix-discord-bot"
+Issues = "https://github.com/Deathcharge/helix-discord-bot/issues"
+Documentation = "https://github.com/Deathcharge/helix-discord-bot#readme"
+
+[tool.setuptools]
+packages = ["samsarix_discord_bot"]
+
+[tool.setuptools.package-data]
+samsarix_discord_bot = ["py.typed"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+exclude = ["discord_bot_src", "build", "dist"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "ASYNC", "S", "RUF"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*.py" = ["S101", "S105", "S106"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+files = ["samsarix_discord_bot", "tests"]
+warn_unreachable = true
+
+[tool.coverage.run]
+branch = true
+source = ["samsarix_discord_bot"]
+omit = ["samsarix_discord_bot/__main__.py"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
+fail_under = 90

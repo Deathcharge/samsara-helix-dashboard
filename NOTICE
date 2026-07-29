@@ -1,0 +1,14 @@
+Samsarix Discord Operator Bot
+Copyright 2026 Samsarix LLC
+
+This product includes software developed by Samsarix LLC and contributors.
+
+The source code is licensed under the Mozilla Public License, version 2.0.
+The names "Samsarix", "Samsarix Discord Operator Bot", and associated logos are
+not licensed under MPL-2.0. See TRADEMARKS.md.
+
+The discord_bot_src directory preserves unsupported Helix-era source history. Its
+presence does not make that code part of the supported or distributed Python package.
+
+Contact: contact@samsarix.com
+Support and security: support@samsarix.com

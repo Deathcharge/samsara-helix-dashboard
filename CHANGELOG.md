@@ -2,7 +2,38 @@
 
 All notable changes to this project will be documented in this file.
 
-## [1.0.0] - 2026-03-31
+## [Unreleased]
+
+### Added
+
+- Standalone `samsarix_discord_bot` package with `/samsarix ping`, `/samsarix about`, and `/samsarix status`.
+- Strict token, endpoint, guild, role, timeout, concurrency, cache, and log-level validation.
+- Bounded HTTP checks that do not follow redirects or read response bodies.
+- No-network configuration validation CLI and console entry point.
+- Token-independent endpoint preflight with automation-friendly exit codes and secret-safe output.
+- Focused unit/integration tests, package build metadata, and Python 3.11–3.13 CI.
+- Productization record and accurate operator documentation.
+- Samsarix support, security, release, citation, ownership-notice, and trademark policies.
+- Source-distribution manifest that includes operator/project documentation and excludes legacy code.
+- Bandit, dependency-audit, distribution-metadata, typed-package, and pinned-action CI checks.
+
+### Changed
+
+- Reframed the independent product as a small service-health operator bot.
+- Replaced the unrelated dashboard dependency files with the bot's reproducible dependency set.
+- Excluded the Helix-coupled `discord_bot_src` snapshot from the shipped wheel.
+- Renamed the supported package, CLI, slash-command group, environment variables, and product
+  metadata from Helix to Samsarix under the stewardship of Samsarix LLC.
+- Standardized the current tree on MPL-2.0 with explicit Samsarix attribution and working contact
+  addresses.
+
+### Removed
+
+- Removed the nonfunctional Node manifest, which referenced an absent `index.js` implementation.
+- Removed the contradictory historical proprietary license from the current tree; it remains in Git
+  history for provenance.
+
+## [1.0.0] - 2026-03-31 (historical extraction claim)
 
 ### Added
 - Initial release of Helix Discord Bot
@@ -33,4 +64,3 @@ All notable changes to this project will be documented in this file.
 - Internationalization (i18n) support
 - Web bridge for external integration
 - Account linking system
-

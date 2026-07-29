@@ -1,184 +1,45 @@
-# Helix Collective Code of Conduct
+# Code of Conduct
 
-## Our Commitment
+## Our commitment
 
-The Helix Collective is committed to providing a welcoming, inclusive, and respectful environment for all community members, regardless of age, body size, disability, ethnicity, gender identity and expression, level of experience, education, socio-economic status, nationality, personal appearance, race, religion, or sexual identity and orientation.
+Contributors and maintainers commit to making participation in this repository a respectful,
+harassment-free experience regardless of age, body size, disability, ethnicity, sex
+characteristics, gender identity or expression, experience level, education, socioeconomic status,
+nationality, appearance, race, caste, color, religion, or sexual identity and orientation.
 
-We are dedicated to creating a community where everyone feels safe, valued, and empowered to contribute their best work.
+## Expected behavior
 
-## Our Standards
+- Be respectful, specific, and constructive.
+- Welcome questions and different levels of experience.
+- Credit other people's work and correct mistakes openly.
+- Keep technical disagreement focused on evidence and user impact.
+- Respect privacy and avoid sharing another person's private information.
 
-### Expected Behavior
+## Unacceptable behavior
 
-Community members are expected to:
-
-- **Be Respectful**: Treat all community members with respect and dignity
-- **Be Inclusive**: Welcome and support people of all backgrounds and identities
-- **Be Collaborative**: Work together constructively and share knowledge generously
-- **Be Professional**: Maintain professional communication in all interactions
-- **Be Accountable**: Take responsibility for your words and actions
-- **Be Open-Minded**: Be receptive to different perspectives and ideas
-- **Be Patient**: Recognize that people have different communication styles and needs
-
-### Unacceptable Behavior
-
-The following behaviors are unacceptable in our community:
-
-- **Harassment**: Any form of harassment, intimidation, or bullying
-- **Discrimination**: Discrimination based on protected characteristics
-- **Hate Speech**: Slurs, derogatory language, or hateful comments
-- **Sexual Harassment**: Unwelcome sexual advances, requests, or comments
-- **Threats**: Threats of violence or harm
-- **Doxxing**: Sharing private information without consent
-- **Spam**: Excessive self-promotion or off-topic content
-- **Trolling**: Deliberately provocative or disruptive behavior
-- **Abuse of Power**: Misuse of moderator or maintainer privileges
+- Harassment, threats, intimidation, stalking, or discriminatory language.
+- Sexualized language or attention.
+- Trolling, personal attacks, or sustained disruption.
+- Publishing private information without explicit permission.
+- Conduct that would reasonably be inappropriate in a professional community.
 
 ## Scope
 
-This Code of Conduct applies to:
+This code applies to repository issues, pull requests, discussions, reviews, and other spaces where
+someone is representing this project or Samsarix LLC.
 
-- All Helix Collective repositories and projects
-- GitHub issues, pull requests, and discussions
-- Community forums and chat channels
-- Conferences, meetups, and events
-- Official social media accounts
-- Any official communication channels
+## Reporting
 
-This Code of Conduct also applies to conduct outside these spaces if it affects the safety and well-being of community members.
+Do not put sensitive personal details in a public issue. Use GitHub's platform reporting tools for
+abuse or safety concerns. For a repository-specific private report, email
+[support@samsarix.com](mailto:support@samsarix.com) with the subject `Code of Conduct report`.
+Include only the information needed to understand and respond to the incident.
 
-## Enforcement
+Maintainers should handle reports as privately and promptly as the available channel permits,
+disclose conflicts of interest, and apply consequences proportionate to the behavior and impact.
 
-### Reporting Violations
+## Attribution
 
-If you witness or experience a violation of this Code of Conduct:
-
-1. **Report Privately**: Email conduct@helixcollective.dev with:
-   - Description of the incident
-   - Names/usernames involved
-   - Date and location/context
-   - Any relevant links or evidence
-   - Your contact information
-
-2. **Include Details**: Provide as much information as possible to help us understand and address the issue
-
-3. **Confidentiality**: Reports will be handled confidentially
-
-### Investigation Process
-
-1. **Acknowledgment**: We will acknowledge receipt of your report within 48 hours
-2. **Investigation**: We will investigate the incident thoroughly and impartially
-3. **Response**: We will take appropriate action based on our findings
-4. **Follow-up**: We will follow up with you about the resolution (to the extent possible)
-
-### Consequences
-
-Violations of this Code of Conduct may result in:
-
-- **Warning**: A private warning about the behavior
-- **Temporary Suspension**: Temporary removal from community spaces
-- **Permanent Ban**: Permanent removal from community spaces
-- **Legal Action**: Reporting to appropriate authorities if necessary
-
-The severity of consequences will be proportional to the severity of the violation.
-
-## Appeal Process
-
-If you believe you have been unfairly treated:
-
-1. Submit a written appeal to conduct@helixcollective.dev
-2. Clearly explain why you believe the decision was unfair
-3. Provide any additional context or evidence
-4. A separate review committee will evaluate your appeal
-5. You will receive a response within 7 days
-
-## Community Guidelines
-
-### Communication
-
-- Use clear, professional language
-- Assume good intent but address impact
-- Listen actively to others
-- Ask questions if you don't understand
-- Provide constructive feedback
-
-### Collaboration
-
-- Credit others' work and ideas
-- Share knowledge generously
-- Help newer community members
-- Review others' contributions thoughtfully
-- Celebrate successes together
-
-### Conflict Resolution
-
-- Address conflicts directly and respectfully
-- Focus on the issue, not the person
-- Seek to understand different perspectives
-- Look for mutually beneficial solutions
-- Escalate to moderators if needed
-
-## Accessibility and Inclusion
-
-We are committed to making our community accessible and inclusive:
-
-- Provide alternative formats for content
-- Use inclusive language
-- Be mindful of different time zones and schedules
-- Accommodate different communication styles
-- Welcome diverse perspectives and experiences
-
-## Specific Guidelines
-
-### GitHub Issues and Pull Requests
-
-- Use respectful language in all comments
-- Provide constructive feedback
-- Avoid dismissive or condescending tone
-- Stay on topic
-- Respect maintainers' decisions
-
-### Discussions and Forums
-
-- Keep conversations on topic
-- Search before posting duplicate questions
-- Use appropriate channels for your topic
-- Respect others' time and attention
-- No spam or self-promotion
-
-### Social Media
-
-- Represent the community positively
-- Don't speak on behalf of the project without authorization
-- Respect others' privacy
-- Follow platform-specific guidelines
-
-## Acknowledgment
-
-This Code of Conduct is adapted from:
-- [Contributor Covenant](https://www.contributor-covenant.org/)
-- [Django Code of Conduct](https://www.djangoproject.com/conduct/)
-- [Python Community Code of Conduct](https://www.python.org/psf/conduct/)
-
-## Questions?
-
-If you have questions about this Code of Conduct:
-
-- Email: conduct@helixcollective.dev
-- Open a Discussion on GitHub
-- Contact a maintainer directly
-
-## Commitment to Change
-
-We recognize that creating an inclusive community is an ongoing process. We are committed to:
-
-- Regularly reviewing and updating this Code of Conduct
-- Listening to community feedback
-- Addressing systemic issues
-- Continuously improving our community culture
-
----
-
-**Last Updated**: March 31, 2026
-
-By participating in the Helix Collective community, you agree to abide by this Code of Conduct.
+This policy is informed by the
+[Contributor Covenant, version 2.1](https://www.contributor-covenant.org/version/2/1/code_of_conduct.html)
+and is intentionally scoped to commitments this repository can honestly support.

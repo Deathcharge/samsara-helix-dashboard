@@ -1,0 +1,48 @@
+name: Bug report
+description: Report a reproducible problem in the supported Samsarix package or CLI.
+title: "[Bug]: "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: >-
+        Do not include Discord tokens, private endpoint URLs, response bodies, or vulnerability
+        details. Report security issues privately as described in SECURITY.md.
+  - type: input
+    id: version
+    attributes:
+      label: Version or commit
+      placeholder: "0.1.0 or commit SHA"
+    validations:
+      required: true
+  - type: dropdown
+    id: surface
+    attributes:
+      label: Affected surface
+      options:
+        - Installation or packaging
+        - Configuration validation
+        - Discord command behavior
+        - Health checking
+        - Documentation
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Minimal reproduction
+      description: Use placeholders for all secrets and private addresses.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
