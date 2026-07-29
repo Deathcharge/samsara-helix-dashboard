@@ -1,65 +1,19 @@
-# Helix Discord Bot
+# Historical Helix Discord Extraction
 
-A comprehensive Discord bot powered by the Helix AI ecosystem, featuring multi-agent coordination, advanced commands, and real-time monitoring.
+`discord_bot_src/` is preserved source history from the larger Helix ecosystem. It is not the
+supported standalone product in this repository.
 
-## Features
+The snapshot:
 
-- **Multi-Agent Coordination** - Agents working together on Discord
-- **Advanced Commands** - 50+ commands across multiple categories
-- **Real-time Monitoring** - Performance tracking and optimization
-- **Content Generation** - Image, text, and creative content
-- **Admin & Moderation** - Server management tools
-- **Fun Minigames** - Interactive entertainment
-- **Portal Deployment** - Deploy Helix portals from Discord
-- **Context Management** - Advanced context and memory systems
+- imports unreleased `apps.backend` modules from another checkout;
+- combines moderation, LLM, code-execution, account, voice, webhook, and monitoring experiments;
+- requests privileged message content in several entry points;
+- has no independently reproducible dependency or test contract;
+- is excluded from the `samsarix-discord-bot` wheel and CI type/lint scope.
 
-## Components
+Do not run `discord_bot_src.discord_bot_helix` as a standalone deployment. The maintained product is
+documented in [README.md](README.md) and lives in `samsarix_discord_bot/`.
 
-- `agent_bot_factory.py` - Bot creation and initialization
-- `agent_memory_service.py` - Memory management for agents
-- `agent_performance_commands.py` - Performance monitoring
-- `commands/` - Command modules (admin, advanced, content, etc.)
-- `discord_helix_bot.py` - Main bot implementation
-
-## Installation
-
-```bash
-pip install -r requirements.txt
-```
-
-## Configuration
-
-Set up your Discord bot token and Helix configuration in environment variables.
-
-## Usage
-
-```python
-from discord_bot_src import HelixBot
-
-bot = HelixBot()
-bot.run(token)
-```
-
-## Commands
-
-### Admin Commands
-- `/admin` - Administrative functions
-- `/moderation` - Moderation tools
-
-### Content Commands
-- `/image` - Generate images
-- `/content` - Create content
-
-### Advanced Commands
-- `/advanced` - Advanced AI features
-- `/optimization` - System optimization
-
-### Monitoring
-- `/monitoring` - Performance monitoring
-- `/performance` - Performance metrics
-
-## License
-
-Apache 2.0 + Proprietary Commercial License
-
-See LICENSING.md for details.
+Future work may extract individual legacy capabilities only when they can be permission-minimal,
+independently configured, tested through a real interface, and documented without private Helix
+dependencies. Until then, syntax compilation is the only CI guarantee for this tree.

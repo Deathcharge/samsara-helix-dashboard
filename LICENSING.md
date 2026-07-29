@@ -1,69 +1,65 @@
-# Licensing
+# Licensing and ownership
 
-Helix Discord Bot is available under a dual-licensing model:
+Samsarix Discord Operator Bot is distributed under the unmodified
+[Mozilla Public License 2.0](LICENSE), identified by the SPDX expression `MPL-2.0`.
 
-## Apache 2.0 License (Open Source)
+Copyright 2026 Samsarix LLC. Individual contributors retain copyright in their contributions
+unless a separate written agreement assigns it.
 
-For open-source, research, internal, and community use, this project is licensed under the Apache License 2.0.
+## Why MPL-2.0
 
-**Permissions:**
-- ✅ Commercial use
-- ✅ Modification
-- ✅ Distribution
-- ✅ Private use
-- ✅ Patent use
+MPL-2.0 is a file-level copyleft license that balances reuse with protection:
 
-**Conditions:**
-- ⚠️ License and copyright notice
-- ⚠️ State changes
+- Anyone may use the software, including commercially.
+- Covered source files and modifications to those files remain available under MPL-2.0 when
+  distributed.
+- A larger application may use different terms for its own separate files.
+- License, copyright, patent, warranty, and liability notices in covered source cannot be stripped.
+- Contributors provide the copyright and patent grants stated in the license.
 
-**Limitations:**
-- ❌ Liability
-- ❌ Warranty
+MPL-2.0 does not require user-interface attribution and does not reserve a commercial-use
+monopoly. The separate [NOTICE](NOTICE) makes ownership and contact information easy to preserve,
+[TRADEMARKS.md](TRADEMARKS.md) keeps brand rights separate from source-code rights, and
+[CITATION.cff](CITATION.cff) makes voluntary citation straightforward.
 
-See LICENSE file for full terms.
+## Covered work
 
-## Proprietary Commercial License
+MPL-2.0 applies to the current repository unless a file is explicitly identified as third-party or
+separately licensed. The supported product is `samsarix_discord_bot/`; tests, documentation, and
+build configuration are distributed with it under the same license.
 
-For enterprises and commercial deployments requiring:
-- Dedicated support
-- Custom features
-- SLA guarantees
-- Indemnification
-- Premium features
+The `discord_bot_src/` directory contains unsupported Helix-era source retained for history and
+possible future extraction. It is included under the repository license but is not packaged,
+supported, or represented as safe to deploy.
 
-**Pricing:**
-- Startup: $99/year (5 deployments)
-- Professional: $499/year (25 deployments)
-- Enterprise: Custom quote
+## Historical revisions
 
-**Benefits:**
-- Priority email support (best-effort)
-- Custom integration assistance
-- Advanced features
-- Quarterly consulting calls
+Changing the license for the current tree does not revoke permissions already granted for copies
+of historical revisions under the license files distributed with those revisions. The current
+source tree and the `0.1.0` release candidate use MPL-2.0.
 
-Contact: licensing@helixcollective.ai
+The removed `LICENSE.PROPRIETARY` remains available in Git history for provenance; it does not apply
+to the current source tree.
 
-## Choosing a License
+## Contributions and future dual licensing
 
-**Use Apache 2.0 if:**
-- Building open-source projects
-- Internal/research use
-- Community contributions
-- Learning and experimentation
+Unless a contribution explicitly says otherwise before acceptance, it is submitted under
+MPL-2.0, the same license as the project. Samsarix LLC does not require copyright assignment or a
+contributor license agreement at this stage. This keeps contribution terms simple, but it also
+means Samsarix LLC cannot unilaterally relicense third-party contributions later.
 
-**Use Proprietary Commercial if:**
-- Commercial deployment
-- Enterprise use
-- Need dedicated support
-- Custom development required
+If future proprietary dual licensing becomes a business requirement, obtain legal advice and adopt
+an appropriate contributor agreement before accepting contributions that must be available under
+both licenses.
 
-## Compliance
+## Paid services
 
-All code must include:
-- Apache 2.0 header in source files
-- License file in distribution
-- NOTICE file for modifications
+The source license does not include a support SLA, warranty, indemnity, hosted service, or custom
+integration. Samsarix LLC may offer those separately under a written agreement.
 
-See CONTRIBUTING.md for more details.
+- General and licensing questions: contact@samsarix.com
+- Product and security support: support@samsarix.com
+
+This document explains the project's intended licensing model; it is not legal advice and does not
+replace the terms in [LICENSE](LICENSE). Samsarix LLC should have counsel confirm code ownership and
+the policy before relying on it in a dispute or formal commercial licensing program.
