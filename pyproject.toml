@@ -44,9 +44,9 @@ samsarix-discord-bot = "samsarix_discord_bot.cli:main"
 
 [project.urls]
 Homepage = "https://www.samsarix.com"
-Repository = "https://github.com/Deathcharge/helix-discord-bot"
-Issues = "https://github.com/Deathcharge/helix-discord-bot/issues"
-Documentation = "https://github.com/Deathcharge/helix-discord-bot#readme"
+Repository = "https://github.com/Deathcharge/samsarix-discord-bot"
+Issues = "https://github.com/Deathcharge/samsarix-discord-bot/issues"
+Documentation = "https://github.com/Deathcharge/samsarix-discord-bot#readme"
 
 [tool.setuptools]
 packages = ["samsarix_discord_bot"]
