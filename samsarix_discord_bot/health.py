@@ -65,11 +65,14 @@ async def check_endpoint(
             session.get(
                 endpoint.url,
                 allow_redirects=False,
-                headers={"User-Agent": "samsarix-discord-bot/0.1"},
+                headers={
+                    "User-Agent": "samsarix-discord-bot/0.1",
+                    **dict(endpoint.headers),
+                },
             ) as response,
         ):
             latency_ms = round((time.perf_counter() - started) * 1000)
-            if 200 <= response.status < 300:
+            if response.status in endpoint.expected_statuses:
                 state = HealthState.HEALTHY
                 detail = None
             elif 300 <= response.status < 400:
@@ -77,7 +80,7 @@ async def check_endpoint(
                 detail = "redirect not followed"
             else:
                 state = HealthState.UNHEALTHY
-                detail = "non-success response"
+                detail = "unexpected response"
             return HealthResult(
                 endpoint=endpoint,
                 state=state,
