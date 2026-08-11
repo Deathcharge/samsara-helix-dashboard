@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import json
 from types import SimpleNamespace
 
 import discord
@@ -88,6 +89,64 @@ def test_check_endpoints_returns_nonzero_for_empty_or_unhealthy_results(
     assert main(["check-endpoints"]) == 4
 
 
+def test_check_endpoints_json_is_stable_and_secret_safe(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    monkeypatch.setenv(
+        "SAMSARIX_HEALTH_ENDPOINTS",
+        '[{"name":"API","url":"https://private.example/health"}]',
+    )
+    endpoint = HealthEndpoint("API", "https://private.example/health")
+
+    class StubChecker:
+        def __init__(self, *args: object, **kwargs: object) -> None:
+            pass
+
+        async def check_all(self) -> tuple[HealthResult, ...]:
+            return (HealthResult(endpoint, HealthState.DEGRADED, 12, 302, "redirect not followed"),)
+
+    monkeypatch.setattr(cli, "HealthChecker", StubChecker)
+
+    assert main(["check-endpoints", "--format", "json"]) == 4
+    payload = json.loads(capsys.readouterr().out)
+    assert payload == {
+        "overall": "degraded",
+        "results": [
+            {
+                "detail": "redirect not followed",
+                "latency_ms": 12,
+                "name": "API",
+                "state": "degraded",
+                "status_code": 302,
+            }
+        ],
+        "schema_version": 1,
+    }
+    assert "private.example" not in json.dumps(payload)
+
+
+def test_check_endpoints_json_reports_empty_configuration(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    monkeypatch.delenv("SAMSARIX_HEALTH_ENDPOINTS", raising=False)
+
+    assert main(["check-endpoints", "--format", "json"]) == 4
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["overall"] == "unconfigured"
+    assert payload["results"] == []
+
+
+def test_check_endpoints_json_reports_configuration_error_without_secret(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    monkeypatch.setenv("SAMSARIX_HEALTH_ENDPOINTS", "not-json-private-value")
+
+    assert main(["check-endpoints", "--format", "json"]) == 2
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["overall"] == "configuration_error"
+    assert "not-json-private-value" not in json.dumps(payload)
+
+
 def test_check_endpoints_fails_without_leaking_unexpected_exception(
     monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:
@@ -108,6 +167,29 @@ def test_check_endpoints_fails_without_leaking_unexpected_exception(
     captured = capsys.readouterr()
     assert "failed unexpectedly" in captured.err
     assert "sensitive upstream detail" not in captured.err
+
+
+def test_check_endpoints_json_contains_unexpected_exception(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    monkeypatch.setenv(
+        "SAMSARIX_HEALTH_ENDPOINTS",
+        '[{"name":"API","url":"https://private.example/health"}]',
+    )
+
+    class StubChecker:
+        def __init__(self, *args: object, **kwargs: object) -> None:
+            pass
+
+        async def check_all(self) -> tuple[HealthResult, ...]:
+            raise RuntimeError("sensitive upstream detail")
+
+    monkeypatch.setattr(cli, "HealthChecker", StubChecker)
+
+    assert main(["check-endpoints", "--format", "json"]) == 5
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["overall"] == "error"
+    assert "sensitive upstream detail" not in json.dumps(payload)
 
 
 def test_run_invokes_bot_without_printing_token(monkeypatch: pytest.MonkeyPatch) -> None:

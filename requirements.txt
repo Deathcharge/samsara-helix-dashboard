@@ -1,2 +1,3 @@
 # Exact runtime dependency set for reproducible installs.
+aiohttp==3.14.3
 discord.py==2.7.1

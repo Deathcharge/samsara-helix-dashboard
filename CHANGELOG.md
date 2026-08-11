@@ -16,6 +16,15 @@ All notable changes to this project will be documented in this file.
 - Samsarix support, security, release, citation, ownership-notice, and trademark policies.
 - Source-distribution manifest that includes operator/project documentation and excludes legacy code.
 - Bandit, dependency-audit, distribution-metadata, typed-package, and pinned-action CI checks.
+- `/samsarix check` for a forced-fresh health result with concurrent-request coalescing.
+- Optional proactive incident and recovery embeds with configurable polling and consecutive-result
+  thresholds.
+- Per-endpoint expected HTTP statuses and secret request-header mappings referenced through
+  `SAMSARIX_ENDPOINT_HEADERS_*` environment variables.
+- Stable `check-endpoints --format json` output for CI and deployment gates.
+- Current competitive research and an explicit narrow product wedge.
+- TLS-only enforcement for endpoints that carry configured secret headers.
+- A shared minimum interval for sequential forced checks, in addition to overlap coalescing.
 
 ### Changed
 
@@ -26,6 +35,10 @@ All notable changes to this project will be documented in this file.
   metadata from Helix to Samsarix under the stewardship of Samsarix LLC.
 - Standardized the current tree on MPL-2.0 with explicit Samsarix attribution and working contact
   addresses.
+- Declared direct `aiohttp` use, bounded supported Python to 3.11–3.13, and refreshed build, test,
+  lint, coverage, and GitHub Actions pins.
+- Replaced generic 2xx classification with endpoint-specific expected-status contracts while
+  retaining 2xx as the default.
 
 ### Removed
 

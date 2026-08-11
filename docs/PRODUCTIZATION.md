@@ -1,6 +1,6 @@
 # Productization Record
 
-Last updated: 2026-07-28
+Last updated: 2026-08-11
 
 ## Current repository assessment
 
@@ -42,8 +42,8 @@ operator-configured HTTP services through ephemeral native slash commands.
 a lightweight Discord status surface without deploying a dashboard, database, or larger platform.
 
 **Primary use case:** configure a Discord token and health endpoint list, validate configuration
-offline, preflight endpoints without Discord, start the process, run `/samsarix ping`, and receive a
-bounded `/samsarix status` result.
+offline, preflight endpoints without Discord, query cached or fresh status privately, and optionally
+receive one thresholded incident/recovery transition in an operator channel.
 
 **Independent reason to exist:** it is a small operational companion that works with any HTTP
 service. It does not import or require another Samsarix or Helix-era repository.
@@ -61,8 +61,8 @@ SLA, warranty, hosted service, or proprietary-use monopoly.
 
 Samsarix LLC and the Samsarix product family replace the former Helix company branding. The
 installable distribution, import namespace, CLI, Discord command group, environment variables,
-metadata, contacts, and supported documentation use Samsarix. The GitHub repository address and
-`discord_bot_src` retain Helix where it is a real historical identifier.
+metadata, contacts, supported documentation, and canonical GitHub repository use Samsarix. The
+`discord_bot_src` extraction retains Helix only where it is a real historical identifier.
 
 The previous legal files described three incompatible models and named the wrong licensed work,
 company, domains, and pricing path. They were replaced with the portfolio-standard structure:
@@ -87,19 +87,24 @@ strategy before the company relies on these files in a dispute or formal dual-li
 - Keep health destinations operator-controlled. Discord users cannot submit URLs.
 - Cap endpoints at 20, timeouts at 30 seconds, and concurrency at 20; default to much smaller values.
 - Do not follow redirects or read response bodies.
+- Allow exact expected-status sets and separately referenced secret request headers without
+  rendering destinations or credential values.
 - Share one in-flight check and cache results briefly to bound amplification.
+- Coalesce simultaneous forced refreshes, enforce a shared minimum interval between sequential
+  forced checks, and keep scheduled alert polling opt-in.
+- Require consecutive failures and recoveries so unchanged states do not create notification noise.
 - Return ephemeral responses and omit URLs, bodies, and secrets.
 - Package only `samsarix_discord_bot`; preserve but do not ship `discord_bot_src`.
 - Treat no configured endpoints as a valid empty state with a clear next action.
-- Avoid a database, AI API, background scheduler, inbound web server, analytics, and cloud-specific
-  deployment for the first release.
+- Avoid a database, AI API, inbound web server, analytics, and cloud-specific deployment. The
+  optional in-process polling loop stores only threshold state and pending transitions in memory.
 
 ## Assumptions
 
 - Operators control environment configuration and intentionally choose whether private endpoints
   are reachable from the bot host.
-- HTTP 2xx is a sufficient first-release health contract; body assertions and auth headers are out
-  of scope.
+- HTTP status is the supported health contract. Operators can choose exact accepted statuses;
+  bounded response-body assertions remain out of scope.
 - Discord itself owns command delivery, authentication of Gateway traffic, and platform rate limits.
 - Operators use an existing process supervisor and secret manager.
 
@@ -128,8 +133,11 @@ strategy before the company relies on these files in a dispute or formal dual-li
 
 ### P2
 
-- [ ] Add opt-in authentication headers from a secret-safe mapping without exposing values.
-- [ ] Add configurable expected-status sets and optional JSON-field assertions.
+- [x] Add opt-in authentication headers from a secret-safe mapping without exposing values.
+- [x] Add configurable expected-status sets.
+- [x] Add low-noise proactive incident and recovery transitions.
+- [x] Add stable machine-readable CLI output for CI and deployment gates.
+- [ ] Add optional bounded JSON-field assertions only if pilot evidence justifies response parsing.
 - [ ] Add a container/process-supervisor example after an owner chooses a supported deployment.
 - [ ] Extract or remove individual `discord_bot_src` modules after separate product/security review.
 - [ ] Add health history only if user validation proves persistence is worth its privacy/ops cost.
@@ -139,8 +147,12 @@ strategy before the company relies on these files in a dispute or formal dual-li
 - [x] Add `pyproject.toml` and console entry point.
 - [x] Implement strict environment parsing and token-free summaries.
 - [x] Implement token-independent endpoint preflight and automation-friendly exit codes.
+- [x] Implement stable JSON preflight output without URLs, headers, or response bodies.
 - [x] Implement bounded concurrent checks and status classification.
-- [x] Implement `/samsarix ping`, `/samsarix about`, and `/samsarix status`.
+- [x] Implement `/samsarix ping`, `/samsarix about`, `/samsarix status`, and forced-fresh
+  `/samsarix check`.
+- [x] Implement opt-in polling with consecutive failure/recovery thresholds and bounded pending
+  delivery state.
 - [x] Implement guild/role authorization and ephemeral output.
 - [x] Implement empty, success, redirect, HTTP failure, timeout, connection failure, and unexpected
   failure states.
@@ -158,45 +170,53 @@ strategy before the company relies on these files in a dispute or formal dual-li
 - Wheel contains `samsarix_discord_bot` and excludes `discord_bot_src`.
 - No runtime path imports another Samsarix or Helix-era repository.
 - Health checks are bounded, body-free, redirect-free, and not user-destination-controlled.
+- Authentication headers remain separate from endpoint configuration, require HTTPS, and are never
+  rendered.
+- Simultaneous status/refresh traffic is coalesced, sequential forced checks have a shared minimum
+  interval, and background traffic is disabled by default.
 - Discord status responses are ephemeral and access controls run server-side.
+- Proactive alerts contain no URLs, credentials, bodies, or mentions and require an explicit channel.
 - Documentation matches exact commands and does not claim credential-backed verification.
 - Ownership/counsel and live Discord gates are named.
 
 ## Completed work
 
-See the Unreleased section of `CHANGELOG.md`. Final verification on 2026-07-28 produced this
+See the Unreleased section of `CHANGELOG.md`. Final verification on 2026-08-11 produced this
 evidence:
 
 - `python -m ruff check .`: passed.
-- `python -m mypy`: passed in strict mode across 10 supported/test source files.
-- `python -m pytest`: 45 passed with 92.72% branch-aware coverage, above the 90% gate.
+- `python -m mypy`: passed in strict mode across 12 supported/test source files.
+- `python -m pytest`: 80 passed with 93.99% branch-aware coverage, above the 90% gate.
 - `python -m bandit -q -r samsarix_discord_bot`: passed with no findings.
 - `python -m pip_audit --strict --requirement requirements.txt`: found no known vulnerabilities.
 - `python -m compileall -q samsarix_discord_bot tests discord_bot_src`: passed.
 - `python -m build` and `python -m twine check`: built and validated the source distribution and
   wheel without warnings.
-- Archive assertions: the 16-file wheel contains the typed supported package and legal notices;
-  the 43-file source distribution contains release/security documentation; both exclude the
+- Archive assertions: the 17-file wheel contains the typed supported package and legal notices;
+  the 46-file source distribution contains release/security documentation; both exclude the
   legacy tree.
-- The complete lint, type, test, Bandit, audit, and compile suite passed locally on Python 3.11 and
-  in a fresh Python 3.13 environment. Python 3.12 is covered by the CI matrix but was not installed
-  locally.
+- The complete lint, type, test, Bandit, audit, and compile suite passed in fresh Python 3.11 and
+  Python 3.13 environments. Python 3.12 is covered by the CI matrix but was not installed locally.
 - Fresh Python 3.11 wheel-only environment: install, import and distribution metadata, `--version`,
   `check-config`, and `pip check` passed without relying on the source checkout.
 - `git diff --check`: passed.
 
-The test suite emitted one upstream `discord.py` warning because Python 3.11 deprecates the
-standard-library `audioop` module used by optional Discord voice support. This product does not
-request or use voice features. The repository security scan found no reportable vulnerability in
-the supported package; its separate report records the legacy candidates that were rejected as
-unshipped, non-runnable snapshot code.
+The test suite emitted upstream `discord.py` deprecation warnings: Python 3.11 warns about the
+optional voice dependency on `audioop`, while Python 3.13 warns about an internal positional regular
+expression argument. This product does not request or use voice features. A pre-remediation security
+diff scan found two Low/P3 issues in the new work: plaintext HTTP was permitted with secret headers,
+and sequential forced checks had no minimum interval. Both were fixed and regression-tested before
+commit.
 
 ## Deferred work and rationale
 
 The legacy feature set is intentionally not ported wholesale. Moderation, arbitrary code execution,
 LLM chat, account linking, persistent memory, voice, web research, and deployment commands each
-introduce material permissions, secrets, privacy, cost, and dependency requirements. Shipping them
-without independent evidence would recreate the original problem.
+introduce material permissions, secrets, privacy, cost, and dependency requirements. Public status
+pages, persistent uptime history, paging schedules, arbitrary body expressions, alert reminders,
+and scheduled-maintenance suppression also remain deferred until pilot evidence justifies their
+state and support costs. Shipping them without independent evidence would recreate the original
+problem.
 
 ## External and owner-controlled blockers
 
@@ -213,8 +233,15 @@ without independent evidence would recreate the original problem.
 - A configured endpoint can access private network resources by design; only trusted operators may
   control environment variables.
 - Endpoint names and availability can be operationally sensitive, although responses are ephemeral.
+- Proactive alerts intentionally make configured endpoint names and state visible to members who
+  can read the selected operator channel.
+- Header values are operator secrets. A compromised process environment can expose them even though
+  application output does not.
 - A compromised Discord token permits impersonation of the bot; rotate it through the Developer
   Portal and secret manager.
 - Legacy code remains in Git history and the working tree for reference. It is excluded from the
   distribution but still requires caution if manually invoked in a larger Helix checkout.
 - Discord and endpoint availability remain external dependencies.
+
+The 2026-08-08 market comparison and competitive-scope decision are recorded in
+`docs/COMPETITIVE_RESEARCH.md`.

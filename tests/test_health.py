@@ -48,7 +48,7 @@ class FakeSession:
     [
         (204, HealthState.HEALTHY, None),
         (302, HealthState.DEGRADED, "redirect not followed"),
-        (503, HealthState.UNHEALTHY, "non-success response"),
+        (503, HealthState.UNHEALTHY, "unexpected response"),
     ],
 )
 async def test_check_endpoint_classifies_status_without_following_redirects(
@@ -63,6 +63,25 @@ async def test_check_endpoint_classifies_status_without_following_redirects(
     assert result.detail == detail
     assert result.status_code == status
     assert session.calls[0][1]["allow_redirects"] is False
+
+
+@pytest.mark.asyncio
+async def test_check_endpoint_uses_expected_statuses_and_secret_headers() -> None:
+    endpoint = HealthEndpoint(
+        "Protected readiness",
+        "https://example.com/ready",
+        expected_statuses=frozenset({401}),
+        headers=(("Authorization", "Bearer private"), ("User-Agent", "custom")),
+    )
+    session = FakeSession(FakeResponse(401))
+
+    result = await check_endpoint(endpoint, session, asyncio.Semaphore(1))
+
+    assert result.state is HealthState.HEALTHY
+    assert session.calls[0][1]["headers"] == {
+        "Authorization": "Bearer private",
+        "User-Agent": "samsarix-discord-bot/0.1",
+    }
 
 
 @pytest.mark.asyncio
