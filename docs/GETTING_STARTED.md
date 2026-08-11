@@ -1,6 +1,7 @@
 # Getting Started
 
-This guide takes a new operator from a clone to the first successful `/samsarix status` response.
+This guide takes a new operator from a clone to a fresh `/samsarix check` response and an optional
+thresholded incident/recovery alert.
 
 ## 1. Create the Discord application
 
@@ -12,6 +13,9 @@ This guide takes a new operator from a clone to the first successful `/samsarix 
 5. Under installation settings, install the app to your test server with `bot` and
    `applications.commands` scopes. Do not grant Administrator.
 
+If proactive alerts will be enabled, grant the bot View Channel, Send Messages, and Embed Links in
+one dedicated operator channel. On-demand commands do not require privileged gateway intents.
+
 For the fastest development sync, copy the server ID and configure
 `SAMSARIX_ALLOWED_GUILD_IDS`. Discord requires Developer Mode to expose **Copy Server ID**.
 
@@ -22,6 +26,8 @@ From the repository root:
 ```bash
 python -m venv .venv
 ```
+
+Use Python 3.11, 3.12, or 3.13. Package metadata intentionally rejects unverified Python 3.14.
 
 macOS or Linux:
 
@@ -46,8 +52,12 @@ PowerShell example monitors two services:
 $env:DISCORD_BOT_TOKEN = "your-token"
 $env:SAMSARIX_ALLOWED_GUILD_IDS = "123456789012345678"
 $env:SAMSARIX_ALLOWED_ROLE_IDS = "234567890123456789"
-$env:SAMSARIX_HEALTH_ENDPOINTS = '[{"name":"API","url":"https://api.example.com/health"},{"name":"Worker","url":"http://worker.internal:8080/ready"}]'
+$env:SAMSARIX_HEALTH_ENDPOINTS = '[{"name":"API","url":"https://api.example.com/health","expected_statuses":[200,204]},{"name":"Worker","url":"https://worker.internal:8443/ready","headers_env":"SAMSARIX_ENDPOINT_HEADERS_WORKER"}]'
+$env:SAMSARIX_ENDPOINT_HEADERS_WORKER = '{"Authorization":"Bearer your-private-readiness-token"}'
 ```
+
+Header-bearing endpoints must use HTTPS. Plain HTTP remains available only for endpoints that do
+not send configured credentials.
 
 Guild administrators can always use `/samsarix status`. If no role IDs are configured, every member
 of an allowed/installed guild can use it. Responses are ephemeral.
@@ -72,6 +82,24 @@ This command does not require `DISCORD_BOT_TOKEN`. It exits `0` only when every 
 safe failure. Output contains endpoint names, states, status codes, latency, and generic failure
 details—never URLs or response bodies.
 
+For CI and deployment gates, request the stable URL- and credential-free JSON schema:
+
+```bash
+samsarix-discord-bot check-endpoints --format json
+```
+
+To enable proactive alerts, copy the dedicated channel ID and add:
+
+```powershell
+$env:SAMSARIX_ALERT_CHANNEL_ID = "345678901234567890"
+$env:SAMSARIX_POLL_INTERVAL_SECONDS = "60"
+$env:SAMSARIX_FAILURE_THRESHOLD = "2"
+$env:SAMSARIX_RECOVERY_THRESHOLD = "2"
+```
+
+Alerting is opt-in. A default incident requires two consecutive degraded/unhealthy checks; recovery
+requires two consecutive healthy checks. Repeated identical states do not send another message.
+
 ## 4. Run and verify
 
 ```bash
@@ -83,8 +111,12 @@ Wait for the log line confirming command sync, then in Discord:
 1. Run `/samsarix ping` and confirm an online response.
 2. Run `/samsarix about` and confirm version `0.1.0`.
 3. Run `/samsarix status` and confirm every configured endpoint has a state, HTTP status, and latency.
-4. Temporarily point a test endpoint at a known failing service, restart, and confirm an unhealthy
-   result without a bot crash.
+4. Run `/samsarix check` and confirm it performs a fresh check rather than returning the warm
+   ordinary cache. Immediate repeated forced checks share the first result for five seconds.
+5. If alerting is enabled, use a nonproduction fixture to verify the configured number of failures
+   produces one incident and the configured number of successes produces one recovery.
+6. Remove the bot's Send Messages permission temporarily and confirm delivery fails safely without
+   exposing a token, URL, header value, or response body in logs.
 
 ## Common failures
 
@@ -110,6 +142,17 @@ Set `SAMSARIX_HEALTH_ENDPOINTS` to a JSON array. Run `check-config` before resta
 ### A service reports a redirect
 
 Redirects are deliberately not followed. Configure the final canonical health URL.
+
+### A valid service reports an unexpected response
+
+Add its accepted status to that endpoint's `expected_statuses` list. Do not broadly accept failure
+statuses merely to make a check green.
+
+### Proactive alerts do not arrive
+
+Confirm `SAMSARIX_ALERT_CHANNEL_ID` identifies a channel visible to the installed bot and that the
+bot has View Channel, Send Messages, and Embed Links there. Run `/samsarix check` to separate
+endpoint health from channel-delivery configuration. Threshold counters reset after a restart.
 
 ### Timeouts or connection failures
 

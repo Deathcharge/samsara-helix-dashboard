@@ -14,15 +14,22 @@ actually reaches the affected code.
 ## Trust boundaries and invariants
 
 - Discord users, interaction fields, endpoint responses, and Discord-visible text are untrusted.
-- The bot token and all process environment variables are trusted operator configuration and must
-  be protected by the deployment environment.
+- The bot token and endpoint-header variables are secrets in trusted operator configuration and
+  must be protected by the deployment environment. Endpoint metadata and limits are trusted but
+  not necessarily secret.
 - Discord users must never select health-check destinations, headers, credentials, executable
   code, filesystem paths, or process arguments.
-- Credentials must not appear in endpoint URLs, logs, exceptions, command arguments, or Discord
-  responses.
+- Credentials must not appear in endpoint URLs, summaries, logs, exceptions, command arguments,
+  JSON output, or Discord responses. Header values must come only from separately referenced
+  `SAMSARIX_ENDPOINT_HEADERS_*` variables.
 - Every outbound request must remain bounded by endpoint count, timeout, concurrency, redirects,
-  response processing, and cache behavior.
-- Guild and role policy must be enforced before starting a status check.
+  response processing, cache behavior, and optional poll interval.
+- Header names/values must be validated against control-character and request-smuggling hazards;
+  transport-controlled headers must remain forbidden and header-bearing endpoints must use HTTPS.
+- Guild and role policy must be enforced before starting an interactive status check. Proactive
+  alert visibility is controlled by the configured Discord channel's membership and permissions.
+- Pending alerts must remain bounded, mentions must be disabled, and unchanged states must not
+  create repeated notifications.
 - The supported runtime must not acquire a dependency on private Samsarix or Helix-era repositories.
 
 ## Reporting

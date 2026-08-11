@@ -8,8 +8,8 @@ CI must not publish automatically from an arbitrary branch or pull request.
 1. Confirm Samsarix LLC owns or has adequate rights to license the current source, including the
    historical extraction. Have counsel review `LICENSE`, `LICENSING.md`, and `TRADEMARKS.md` before
    relying on them in a dispute or commercial licensing program.
-2. Decide whether to retain the historical `helix-discord-bot` GitHub slug. Product, package, CLI,
-   and command branding do not depend on changing that stable repository address.
+2. Keep package metadata and documentation pointed at the renamed canonical repository,
+   `Deathcharge/samsarix-discord-bot`.
 3. Confirm and register the `samsarix-discord-bot` distribution name before publishing.
 4. Configure PyPI Trusted Publishing for this repository and a protected release environment.
 5. Enable GitHub private vulnerability reporting and branch protection for `main`.
@@ -18,11 +18,16 @@ CI must not publish automatically from an arbitrary branch or pull request.
 
 1. Install the bot into an owner-controlled test guild with no privileged intents or administrative
    permissions.
-2. Verify `/samsarix ping`, `/samsarix about`, and `/samsarix status` as an allowed user.
+2. Verify `/samsarix ping`, `/samsarix about`, `/samsarix status`, and `/samsarix check` as an
+   allowed user. Confirm simultaneous fresh checks coalesce.
 3. Verify status denial for the wrong guild, wrong role, and direct messages.
 4. Verify one healthy, redirecting, failing, timing-out, and unreachable endpoint without using
    production secrets.
-5. Record the Discord application ID, tested commit, Python version, and operator responsible for
+5. Verify a protected HTTPS fixture receives headers without logging/rendering their values and
+   accepts only its configured HTTP statuses. Confirm the same header mapping is rejected for HTTP.
+6. If proactive alerts are enabled, verify failure/recovery thresholds, no repeated unchanged-state
+   alert, missing channel, lost Send Messages permission, reconnect, and restart behavior.
+7. Record the Discord application ID, tested commit, Python version, and operator responsible for
    the smoke test in the release notes. Never record the token.
 
 ## Build verification
@@ -47,6 +52,7 @@ Install the wheel into a second clean environment and run:
 samsarix-discord-bot --version
 samsarix-discord-bot check-config
 samsarix-discord-bot check-endpoints
+samsarix-discord-bot check-endpoints --format json
 python -c "import samsarix_discord_bot; print(samsarix_discord_bot.__version__)"
 ```
 

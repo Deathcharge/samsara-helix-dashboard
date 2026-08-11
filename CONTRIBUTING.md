@@ -32,7 +32,9 @@ failure states. Tests must not require Discord credentials or public network acc
 - Prefer native application commands over message parsing.
 - Do not request privileged intents without a documented, tested need.
 - Never accept health-check destinations from Discord users.
+- Keep secret headers in separately referenced environment variables; never render or log values.
 - Keep endpoint count, timeouts, redirects, concurrency, and retries bounded.
+- Keep background polling opt-in, pending delivery bounded, and unchanged states notification-free.
 - Never log tokens, URL credentials, response bodies, or private Discord content.
 - Do not add a database, AI provider, authentication system, or cloud dependency without a concrete
   primary-journey requirement.
