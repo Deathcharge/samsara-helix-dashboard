@@ -112,6 +112,10 @@ def test_token_can_be_optional_for_non_runtime_callers() -> None:
             "HTTP status integers",
         ),
         (
+            '[{"name":"API","url":"https://example.com","expected_statuses":[200,200]}]',
+            "unique values",
+        ),
+        (
             '[{"name":"API","url":"https://example.com","headers_env":"AUTH_TOKEN"}]',
             "SAMSARIX_ENDPOINT_HEADERS",
         ),

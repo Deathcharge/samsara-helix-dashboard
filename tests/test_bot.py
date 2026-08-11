@@ -287,6 +287,16 @@ async def test_unavailable_alert_channel_keeps_one_bounded_pending_transition(
     assert list(bot._pending_alerts) == ["api"]
     assert caplog.text.count("Configured alert channel is unavailable") == 1
 
+    send = AsyncMock(side_effect=RuntimeError("delivery failed"))
+    monkeypatch.setattr(bot, "get_channel", lambda channel_id: SimpleNamespace(send=send))
+    with pytest.raises(RuntimeError, match="delivery failed"):
+        await bot._deliver_pending_alerts()
+    assert bot._alert_delivery_error_reported is False
+
+    monkeypatch.setattr(bot, "get_channel", lambda channel_id: None)
+    await bot._deliver_pending_alerts()
+    assert caplog.text.count("Configured alert channel is unavailable") == 2
+
 
 @pytest.mark.asyncio
 async def test_alert_loop_polls_once_and_queues_transition(

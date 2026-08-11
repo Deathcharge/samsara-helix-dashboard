@@ -48,6 +48,10 @@ python -m twine check dist/*
 
 Install the wheel into a second clean environment and run:
 
+Set `DISCORD_BOT_TOKEN` to a non-production placeholder before `check-config`. Either configure
+`SAMSARIX_HEALTH_ENDPOINTS` with a controlled HTTPS fixture before the endpoint checks, or treat
+exit code 4 and the `unconfigured` JSON state as the expected empty-configuration result.
+
 ```bash
 samsarix-discord-bot --version
 samsarix-discord-bot check-config

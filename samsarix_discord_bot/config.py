@@ -175,6 +175,8 @@ def _parse_expected_statuses(value: object, label: str) -> frozenset[int]:
             raise ConfigError(
                 f"{label}.expected_statuses must contain only HTTP status integers from 100 to 599"
             )
+        if status in statuses:
+            raise ConfigError(f"{label}.expected_statuses must contain unique values")
         statuses.add(status)
     return frozenset(statuses)
 

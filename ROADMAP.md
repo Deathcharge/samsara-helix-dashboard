@@ -11,6 +11,11 @@ Current disposition: the standalone productization and canonical repository rena
 Competitive operator workflows are in active release-candidate hardening; release and flagship
 adoption remain separate decisions.
 
+Completed competitive operator loop:
+
+- Authenticated headers, exact expected statuses, forced-fresh checks, JSON preflight output, and
+  thresholded incident/recovery notifications are implemented for the competitive operator loop.
+
 ## Stabilize the productized default
 
 - Keep the default branch buildable from a clean checkout and preserve exact-head CI evidence.
@@ -32,8 +37,6 @@ Current hardening backlog:
 
 - No live Discord installation, command sync, permissions, or reconnect test was observed.
 - No release/publish automation or versioned release exists.
-- Authenticated headers, exact expected statuses, forced-fresh checks, JSON preflight output, and
-  thresholded incident/recovery notifications are implemented for the competitive operator loop.
 - HTTP status remains the deliberately bounded health definition; response-body assertions are not
   implemented.
 - Repository size and legacy directories can still mislead users and security tools despite artifact exclusion.

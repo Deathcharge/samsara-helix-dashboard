@@ -268,6 +268,7 @@ class SamsarixOperatorBot(discord.Client):
                 logger.error("Configured alert channel is unavailable or not messageable")
                 self._alert_delivery_error_reported = True
             return
+        self._alert_delivery_error_reported = False
 
         for key, event in tuple(self._pending_alerts.items()):
             try:

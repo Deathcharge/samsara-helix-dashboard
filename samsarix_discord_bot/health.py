@@ -66,8 +66,8 @@ async def check_endpoint(
                 endpoint.url,
                 allow_redirects=False,
                 headers={
-                    "User-Agent": "samsarix-discord-bot/0.1",
                     **dict(endpoint.headers),
+                    "User-Agent": "samsarix-discord-bot/0.1",
                 },
             ) as response,
         ):

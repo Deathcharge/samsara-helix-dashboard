@@ -71,7 +71,7 @@ async def test_check_endpoint_uses_expected_statuses_and_secret_headers() -> Non
         "Protected readiness",
         "https://example.com/ready",
         expected_statuses=frozenset({401}),
-        headers=(("Authorization", "Bearer private"),),
+        headers=(("Authorization", "Bearer private"), ("User-Agent", "custom")),
     )
     session = FakeSession(FakeResponse(401))
 
@@ -79,8 +79,8 @@ async def test_check_endpoint_uses_expected_statuses_and_secret_headers() -> Non
 
     assert result.state is HealthState.HEALTHY
     assert session.calls[0][1]["headers"] == {
-        "User-Agent": "samsarix-discord-bot/0.1",
         "Authorization": "Bearer private",
+        "User-Agent": "samsarix-discord-bot/0.1",
     }
 
 
